@@ -4,9 +4,11 @@ const STORAGE_KEYS = {
   players: "party-tavern-players",
   soundEnabled: "party-tavern-sound-enabled",
   showBonus: "party-tavern-show-bonus",
+  session: "party-tavern-room-session",
 };
 
 const VIEW_TITLES = {
+  lobby: "进入房间",
   home: "主页",
   truth: "真心话",
   dare: "大冒险",
@@ -17,6 +19,9 @@ const VIEW_TITLES = {
 
 const LEVELS = ["全部", "轻松", "搞笑", "微刺激"];
 const DEFAULT_PLAYER_COUNT = 4;
+const ROOM_MEMBER_TTL = 35000;
+const ROOM_HEARTBEAT_MS = 12000;
+const HOLD_EM_MAX_PLAYERS = 8;
 
 const HOME_MODULES = [
   {
@@ -44,7 +49,7 @@ const HOME_MODULES = [
     route: "cards",
     badge: "牌",
     title: "纸牌小游戏",
-    description: "四种扑克牌玩法集中在一页，适合多人围着屏幕快速玩。",
+    description: "六种扑克牌玩法集中在一页，适合多人围着屏幕快速玩。",
     buttonText: "进入纸牌中心",
   },
   {
@@ -268,6 +273,78 @@ const ROULETTE_CARDS = [
   { id: "roulette-18", title: "反客为主", detail: "接下来由你指定下一位抽牌或抽题的人。", tag: "控制权" },
 ];
 
+const BIG_SISTER_RULES = {
+  K: {
+    title: "大姐令",
+    detail: "抽到的人成为本轮“大姐”。直到下一张 K 出现前，所有人和你说话前要先喊一声“姐”，忘记的人喝一小口。",
+    persistent: true,
+    effectText: "说话前先喊姐",
+  },
+  Q: {
+    title: "副手牌",
+    detail: "指定一位朋友当你的副手。你下一次被点任务或喝酒时，对方要陪你一起完成。",
+    persistent: true,
+    effectText: "副手陪同执行",
+  },
+  J: {
+    title: "审问牌",
+    detail: "你可以连续对任意一位朋友发出 3 个快问快答问题，对方必须立刻回答。",
+  },
+  A: {
+    title: "反转牌",
+    detail: "你可以宣布一条临时规则生效一轮，例如“发言前先说收到”，或废除当前一条持续规则。",
+    persistent: true,
+    effectText: "临时口头规则",
+  },
+  10: {
+    title: "话题炸弹",
+    detail: "你说出一个轻松话题，全场顺时针每人都要答一句，卡住的人喝一小口。",
+  },
+  9: {
+    title: "九秒应答",
+    detail: "指定一位朋友在 9 秒内说出 3 个关键词，超时就喝一小口。",
+  },
+  8: {
+    title: "交换视角",
+    detail: "和任意一位朋友交换座位一轮，或者互换一个今晚限定昵称。",
+  },
+  7: {
+    title: "跟手挑战",
+    detail: "你做一个动作，全场在 3 秒内跟上，最慢的人喝一小口。",
+    persistent: true,
+    effectText: "跟手动作延续到下轮开始",
+  },
+  6: {
+    title: "六字夸夸",
+    detail: "你必须用六个字夸一位朋友，卡壳就喝一小口。",
+  },
+  5: {
+    title: "五选一",
+    detail: "从真心话、碰杯、表演动作、唱一句、副手协助中选五选一执行。",
+  },
+  4: {
+    title: "四拍节奏",
+    detail: "带全场拍四下节奏，谁乱拍谁喝一小口。",
+  },
+  3: {
+    title: "三人联盟",
+    detail: "你指定另外两位朋友组成三人小队，下一次其中任意一人被点任务，其余两人要陪同。",
+    persistent: true,
+    effectText: "三人小队陪同一次",
+  },
+  2: {
+    title: "小姐回响",
+    detail: "沿用小姐牌的轻量版规则：指定一位朋友回答一个轻微真心话，不想答就喝一小口。",
+  },
+};
+
+const BIG_SISTER_SUIT_HINTS = {
+  "♠": "黑桃附加：动作要果断，拖太久就加一口小惩罚。",
+  "♥": "红桃附加：这张更偏向真诚互动，完成后可以指定下一位抽牌人。",
+  "♣": "梅花附加：这张更偏向现场表演，投入一点会更有节目效果。",
+  "♦": "方块附加：这张更偏向幸运加成，执行顺利可以获得一次免喝权。",
+};
+
 const SUITS = [
   { symbol: "♠", name: "黑桃", color: "black" },
   { symbol: "♥", name: "红桃", color: "red" },
@@ -331,6 +408,7 @@ const KING_RULES = {
 };
 
 const KING_RULE_ORDER = ["K", "Q", "J", "A", "10", "9", "8", "7", "6", "5", "4", "3", "2"];
+const BIG_SISTER_RULE_ORDER = ["K", "Q", "J", "A", "10", "9", "8", "7", "6", "5", "4", "3", "2"];
 
 const TRUTH_BANK = buildBank(TRUTH_SOURCE, "truth");
 const DARE_BANK = buildBank(DARE_SOURCE, "dare");
@@ -338,21 +416,39 @@ const DARE_BANK = buildBank(DARE_SOURCE, "dare");
 const state = createInitialState();
 
 let audioContext = null;
+let roomHeartbeatTimer = null;
+let roomSyncTimer = null;
 
 document.addEventListener("click", handleClick);
 document.addEventListener("submit", handleSubmit);
 document.addEventListener("input", handleInput);
+window.addEventListener("storage", handleStorageSync);
+window.addEventListener("beforeunload", handleBeforeUnload);
 
 initializeApp();
 
 function initializeApp() {
   state.bonusResult = getRandomBonusResult();
   primeCardGames();
+
+  if (state.session.joined && state.session.roomCode && state.session.nickname) {
+    attachToRoom(state.session.nickname, state.session.roomCode, { silent: true, restoreShared: true });
+  } else if (state.roomDraft.roomCode) {
+    replaceRoomUrl(state.roomDraft.roomCode);
+  }
+
   renderApp();
 }
 
 function createInitialState() {
+  const session = createSessionState();
   return {
+    session,
+    roomDraft: {
+      nickname: session.nickname || "",
+      roomCode: session.roomCode || getRoomCodeFromUrl(),
+    },
+    roomNotice: "",
     view: "home",
     players: loadStorage(STORAGE_KEYS.players, []),
     playerDraft: "",
@@ -365,6 +461,28 @@ function createInitialState() {
     dare: createPromptSession(),
     combo: createComboSession(),
     cards: createCardCenterState(),
+    room: createRoomRuntimeState(),
+  };
+}
+
+function createSessionState() {
+  const saved = loadStorage(STORAGE_KEYS.session, null);
+  return {
+    memberId: saved?.memberId || generateId("member"),
+    nickname: saved?.nickname || "",
+    roomCode: saved?.roomCode || "",
+    joinedAt: saved?.joinedAt || 0,
+    joined: Boolean(saved?.joined && saved?.roomCode && saved?.nickname),
+  };
+}
+
+function createRoomRuntimeState() {
+  return {
+    code: "",
+    syncMode: "浏览器本地房间",
+    members: [],
+    lastUpdatedAt: 0,
+    lastSharedHash: "",
   };
 }
 
@@ -409,6 +527,8 @@ function createCardCenterState() {
       currentRule: null,
       showRules: false,
     },
+    holdem: createHoldemGame(),
+    bigSister: createBigSisterGame(),
   };
 }
 
@@ -427,6 +547,32 @@ function createHighLowGame() {
   };
 }
 
+function createHoldemGame(previous = {}) {
+  return {
+    stage: "idle",
+    handNumber: previous.handNumber || 0,
+    dealerIndex: previous.dealerIndex || 0,
+    deck: [],
+    communityCards: [],
+    players: [],
+    showdown: null,
+    feedback: "点击“发新一局”，系统会按当前房间玩家发底牌。为了适合聚会使用，默认是公开主持模式。",
+  };
+}
+
+function createBigSisterGame() {
+  return {
+    deck: shuffleArray(createDeck()),
+    currentCard: null,
+    currentRule: null,
+    currentPlayer: "",
+    turnIndex: 0,
+    history: [],
+    activeEffects: [],
+    showRules: false,
+  };
+}
+
 function primeCardGames() {
   if (!state.cards.lucky.currentCard) {
     drawLuckyCard({ render: false });
@@ -436,6 +582,9 @@ function primeCardGames() {
   }
   if (!state.cards.king.currentCard) {
     drawKingCard({ render: false });
+  }
+  if (!state.cards.bigSister.currentCard) {
+    drawBigSisterCard({ render: false });
   }
 }
 
@@ -462,7 +611,7 @@ function saveStorage(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    // 本地不可写时保持静默降级
+    // 本地不可写时静默降级
   }
 }
 
@@ -495,11 +644,402 @@ function pickRandom(list) {
   return list[Math.floor(Math.random() * list.length)];
 }
 
+function generateId(prefix = "id") {
+  return `${prefix}-${Math.random().toString(36).slice(2, 8)}-${Date.now().toString(36).slice(-4)}`;
+}
+
+function normalizeRoomCode(value) {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+}
+
+function generateRoomCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let index = 0; index < 6; index += 1) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return code;
+}
+
+function getRoomStorageKey(code) {
+  return `party-tavern-room-${code}`;
+}
+
+function getRoomCodeFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    return normalizeRoomCode(url.searchParams.get("room") || "");
+  } catch (error) {
+    return "";
+  }
+}
+
+function replaceRoomUrl(code = "") {
+  try {
+    const url = new URL(window.location.href);
+    if (code) {
+      url.searchParams.set("room", code);
+    } else {
+      url.searchParams.delete("room");
+    }
+    history.replaceState({}, "", url.toString());
+  } catch (error) {
+    // file:// 或老环境下忽略
+  }
+}
+
+function getCurrentRoomSnapshot() {
+  if (!state.room.code) {
+    return null;
+  }
+  return loadStorage(getRoomStorageKey(state.room.code), null);
+}
+
+function createDefaultRoomSnapshot(code) {
+  return {
+    code,
+    syncMode: state.room.syncMode,
+    ownerId: state.session.memberId,
+    updatedAt: 0,
+    members: [],
+    shared: serializeSharedState(),
+  };
+}
+
+function pruneRoomMembers(members) {
+  const threshold = Date.now() - ROOM_MEMBER_TTL;
+  return (members || []).filter((member) => member.lastSeenAt >= threshold);
+}
+
+function getCurrentMemberPresence() {
+  return {
+    id: state.session.memberId,
+    nickname: state.session.nickname,
+    joinedAt: state.session.joinedAt || Date.now(),
+    lastSeenAt: Date.now(),
+  };
+}
+
+function upsertRoomMember(members, member) {
+  const nextMembers = pruneRoomMembers(members).filter((item) => item.id !== member.id);
+  nextMembers.push(member);
+  nextMembers.sort((left, right) => left.joinedAt - right.joinedAt);
+  return nextMembers;
+}
+
+function serializePromptSession(session) {
+  return {
+    level: session.level,
+    currentPlayer: session.currentPlayer,
+    currentItem: session.currentItem,
+    usedIds: [...session.usedIds],
+    exhausted: session.exhausted,
+  };
+}
+
+function deserializePromptSession(raw) {
+  return {
+    level: raw?.level || "全部",
+    currentPlayer: raw?.currentPlayer || "",
+    currentItem: raw?.currentItem || null,
+    usedIds: new Set(raw?.usedIds || []),
+    exhausted: Boolean(raw?.exhausted),
+  };
+}
+
+function serializeComboSession(session) {
+  return {
+    level: session.level,
+    currentPlayer: session.currentPlayer,
+    choice: session.choice,
+    currentItem: session.currentItem,
+    truthUsedIds: [...session.truthUsedIds],
+    dareUsedIds: [...session.dareUsedIds],
+    feedback: session.feedback,
+  };
+}
+
+function deserializeComboSession(raw) {
+  return {
+    level: raw?.level || "全部",
+    currentPlayer: raw?.currentPlayer || "",
+    choice: raw?.choice || "",
+    currentItem: raw?.currentItem || null,
+    truthUsedIds: new Set(raw?.truthUsedIds || []),
+    dareUsedIds: new Set(raw?.dareUsedIds || []),
+    feedback: raw?.feedback || "先随机点一位朋友，再决定是真心话还是大冒险。",
+  };
+}
+
+function serializeCardsState(cards) {
+  return {
+    activeTab: cards.activeTab,
+    lucky: cards.lucky,
+    highLow: cards.highLow,
+    roulette: cards.roulette,
+    king: cards.king,
+    holdem: cards.holdem,
+    bigSister: cards.bigSister,
+  };
+}
+
+function deserializeCardsState(raw) {
+  const defaults = createCardCenterState();
+  return {
+    activeTab: raw?.activeTab || defaults.activeTab,
+    lucky: raw?.lucky || defaults.lucky,
+    highLow: raw?.highLow || defaults.highLow,
+    roulette: raw?.roulette || defaults.roulette,
+    king: raw?.king || defaults.king,
+    holdem: raw?.holdem || defaults.holdem,
+    bigSister: raw?.bigSister || defaults.bigSister,
+  };
+}
+
+function serializeSharedState() {
+  return {
+    view: state.view,
+    players: [...state.players],
+    showBonus: state.showBonus,
+    bonusResult: state.bonusResult,
+    tipIndex: state.tipIndex,
+    truth: serializePromptSession(state.truth),
+    dare: serializePromptSession(state.dare),
+    combo: serializeComboSession(state.combo),
+    cards: serializeCardsState(state.cards),
+  };
+}
+
+function applySharedState(shared) {
+  if (!shared) {
+    return;
+  }
+
+  state.view = shared.view || "home";
+  state.players = [...(shared.players || [])];
+  state.showBonus = typeof shared.showBonus === "boolean" ? shared.showBonus : state.showBonus;
+  state.bonusResult = shared.bonusResult || state.bonusResult || getRandomBonusResult();
+  state.tipIndex = Number.isInteger(shared.tipIndex) ? shared.tipIndex : state.tipIndex;
+  state.truth = deserializePromptSession(shared.truth);
+  state.dare = deserializePromptSession(shared.dare);
+  state.combo = deserializeComboSession(shared.combo);
+  state.cards = deserializeCardsState(shared.cards);
+  primeCardGames();
+  normalizeGamePlayers({ resetHoldem: false });
+}
+
+function attachToRoom(nickname, roomCode, options = {}) {
+  const { silent = false, restoreShared = true } = options;
+  const normalizedNickname = nickname.trim().slice(0, 14);
+  const normalizedCode = normalizeRoomCode(roomCode || generateRoomCode());
+
+  if (!normalizedNickname) {
+    state.roomNotice = "先输入一个昵称，再进入房间。";
+    renderApp();
+    return;
+  }
+
+  if (!normalizedCode) {
+    state.roomNotice = "房间号需要是 1 到 6 位字母或数字。";
+    renderApp();
+    return;
+  }
+
+  state.session.nickname = normalizedNickname;
+  state.session.roomCode = normalizedCode;
+  state.session.joinedAt = Date.now();
+  state.session.joined = true;
+  saveStorage(STORAGE_KEYS.session, state.session);
+
+  state.room.code = normalizedCode;
+  state.room.members = [];
+  state.room.lastSharedHash = "";
+  state.room.lastUpdatedAt = 0;
+
+  const currentSnapshot = loadStorage(getRoomStorageKey(normalizedCode), null);
+  const snapshot = currentSnapshot || createDefaultRoomSnapshot(normalizedCode);
+
+  if (restoreShared && snapshot.shared) {
+    applySharedState(snapshot.shared);
+  }
+
+  const nextSnapshot = {
+    ...snapshot,
+    code: normalizedCode,
+    syncMode: state.room.syncMode,
+    ownerId: snapshot.ownerId || state.session.memberId,
+    members: upsertRoomMember(snapshot.members, getCurrentMemberPresence()),
+    shared: restoreShared && snapshot.shared ? snapshot.shared : serializeSharedState(),
+    updatedAt: Date.now(),
+  };
+
+  saveStorage(getRoomStorageKey(normalizedCode), nextSnapshot);
+
+  state.room.members = nextSnapshot.members;
+  state.room.lastUpdatedAt = nextSnapshot.updatedAt;
+  state.room.lastSharedHash = JSON.stringify(nextSnapshot.shared);
+  state.roomDraft.nickname = normalizedNickname;
+  state.roomDraft.roomCode = normalizedCode;
+  state.roomNotice = silent ? "" : `已进入房间 ${normalizedCode}。`;
+
+  replaceRoomUrl(normalizedCode);
+  startRoomHeartbeat();
+}
+
+function leaveRoom() {
+  if (state.session.joined && state.room.code) {
+    const snapshot = getCurrentRoomSnapshot() || createDefaultRoomSnapshot(state.room.code);
+    const nextMembers = pruneRoomMembers(snapshot.members).filter((member) => member.id !== state.session.memberId);
+    const nextSnapshot = {
+      ...snapshot,
+      members: nextMembers,
+      updatedAt: Date.now(),
+    };
+    saveStorage(getRoomStorageKey(state.room.code), nextSnapshot);
+  }
+
+  stopRoomHeartbeat();
+  state.session.joined = false;
+  state.session.roomCode = "";
+  saveStorage(STORAGE_KEYS.session, state.session);
+  state.room = createRoomRuntimeState();
+  state.roomDraft.roomCode = "";
+  state.roomNotice = "已退出房间。";
+  replaceRoomUrl("");
+  renderApp();
+}
+
+function startRoomHeartbeat() {
+  stopRoomHeartbeat();
+  roomHeartbeatTimer = window.setInterval(() => {
+    syncRoomSnapshot({ force: true, preserveShared: true });
+  }, ROOM_HEARTBEAT_MS);
+}
+
+function stopRoomHeartbeat() {
+  if (roomHeartbeatTimer) {
+    clearInterval(roomHeartbeatTimer);
+    roomHeartbeatTimer = null;
+  }
+}
+
+function queueRoomSync(options = {}) {
+  if (!state.session.joined || !state.room.code) {
+    return;
+  }
+
+  if (roomSyncTimer) {
+    clearTimeout(roomSyncTimer);
+  }
+
+  roomSyncTimer = window.setTimeout(() => {
+    syncRoomSnapshot(options);
+  }, 0);
+}
+
+function syncRoomSnapshot(options = {}) {
+  if (!state.session.joined || !state.room.code) {
+    return;
+  }
+
+  const { force = false, preserveShared = false } = options;
+  const existing = getCurrentRoomSnapshot() || createDefaultRoomSnapshot(state.room.code);
+  const shared = preserveShared && existing.shared ? existing.shared : serializeSharedState();
+  const sharedHash = JSON.stringify(shared);
+  const nextMembers = upsertRoomMember(existing.members, getCurrentMemberPresence());
+  const membersHash = JSON.stringify(nextMembers);
+  const currentMembersHash = JSON.stringify(state.room.members);
+
+  if (!force && sharedHash === state.room.lastSharedHash && membersHash === currentMembersHash) {
+    return;
+  }
+
+  const nextSnapshot = {
+    ...existing,
+    code: state.room.code,
+    syncMode: state.room.syncMode,
+    ownerId: existing.ownerId || state.session.memberId,
+    members: nextMembers,
+    shared,
+    updatedAt: Date.now(),
+  };
+
+  saveStorage(getRoomStorageKey(state.room.code), nextSnapshot);
+  state.room.members = nextMembers;
+  state.room.lastUpdatedAt = nextSnapshot.updatedAt;
+  state.room.lastSharedHash = sharedHash;
+}
+
+function handleStorageSync(event) {
+  if (!state.session.joined || !state.room.code) {
+    return;
+  }
+
+  if (event.key !== getRoomStorageKey(state.room.code) || !event.newValue) {
+    return;
+  }
+
+  try {
+    const snapshot = JSON.parse(event.newValue);
+    if (!snapshot || snapshot.updatedAt <= state.room.lastUpdatedAt) {
+      return;
+    }
+
+    const nextMembers = pruneRoomMembers(snapshot.members);
+    const nextHash = JSON.stringify(snapshot.shared || {});
+    const shouldApplyShared = nextHash && nextHash !== state.room.lastSharedHash;
+
+    state.room.members = nextMembers;
+    state.room.lastUpdatedAt = snapshot.updatedAt;
+
+    if (shouldApplyShared) {
+      applySharedState(snapshot.shared);
+      state.room.lastSharedHash = nextHash;
+    }
+
+    renderApp();
+  } catch (error) {
+    // 非法房间数据忽略
+  }
+}
+
+function handleBeforeUnload() {
+  if (!state.session.joined || !state.room.code) {
+    return;
+  }
+
+  const snapshot = getCurrentRoomSnapshot();
+  if (!snapshot) {
+    return;
+  }
+
+  const nextSnapshot = {
+    ...snapshot,
+    members: pruneRoomMembers(snapshot.members).filter((member) => member.id !== state.session.memberId),
+    updatedAt: Date.now(),
+  };
+
+  try {
+    localStorage.setItem(getRoomStorageKey(state.room.code), JSON.stringify(nextSnapshot));
+  } catch (error) {
+    // 忽略
+  }
+}
+
+function getRoomMemberNames() {
+  return state.room.members.map((member) => member.nickname).filter(Boolean);
+}
+
 function getEffectivePlayers(minCount = DEFAULT_PLAYER_COUNT) {
-  if (state.players.length) {
-    return [...state.players];
+  const sharedNames = Array.from(new Set([...getRoomMemberNames(), ...state.players]));
+  if (sharedNames.length) {
+    return sharedNames;
   }
   return Array.from({ length: minCount }, (_, index) => `玩家${index + 1}`);
+}
+
+function getTablePlayers(minCount = 2, maxCount = HOLD_EM_MAX_PLAYERS) {
+  return getEffectivePlayers(Math.max(minCount, DEFAULT_PLAYER_COUNT)).slice(0, maxCount);
 }
 
 function getRandomPlayer(excludeName = "") {
@@ -549,6 +1089,7 @@ function drawPrompt(gameKey, options = {}) {
   const { render = true } = options;
   const session = getPromptSession(gameKey);
   const bank = getPromptBank(gameKey);
+
   if (!session.currentPlayer) {
     session.currentPlayer = getRandomPlayer();
   }
@@ -614,6 +1155,7 @@ function setPromptLevel(gameKey, level) {
   } else {
     session.exhausted = false;
   }
+
   renderApp();
 }
 
@@ -796,6 +1338,190 @@ function resetKingDeck() {
   drawKingCard();
 }
 
+function startHoldemHand() {
+  const playerNames = getTablePlayers(2, HOLD_EM_MAX_PLAYERS);
+  const deck = shuffleArray(createDeck());
+  const dealerIndex = state.cards.holdem.players.length
+    ? (state.cards.holdem.dealerIndex + 1) % playerNames.length
+    : 0;
+
+  state.cards.holdem = {
+    ...createHoldemGame({
+      handNumber: state.cards.holdem.handNumber + 1,
+      dealerIndex,
+    }),
+    handNumber: state.cards.holdem.handNumber + 1,
+    dealerIndex,
+    stage: "preflop",
+    deck,
+    communityCards: [],
+    players: playerNames.map((name) => ({
+      id: generateId("holdem-player"),
+      name,
+      holeCards: [deck.pop(), deck.pop()],
+      revealed: false,
+      bestHand: null,
+    })),
+    feedback: `第 ${state.cards.holdem.handNumber + 1} 局已发底牌。庄位是 ${playerNames[dealerIndex]}，点击“下一阶段”继续翻公共牌。`,
+  };
+
+  playUiTone("success");
+  renderApp();
+}
+
+function advanceHoldemStage() {
+  const game = state.cards.holdem;
+
+  if (game.stage === "idle" || game.stage === "showdown") {
+    startHoldemHand();
+    return;
+  }
+
+  if (game.stage === "preflop") {
+    game.communityCards.push(game.deck.pop(), game.deck.pop(), game.deck.pop());
+    game.stage = "flop";
+    game.feedback = "翻牌圈已发出 3 张公共牌。现在可以看看谁的牌势开始成型。";
+  } else if (game.stage === "flop") {
+    game.communityCards.push(game.deck.pop());
+    game.stage = "turn";
+    game.feedback = "转牌已翻开。桌面局势更清晰了，继续观察谁最像暗藏大牌。";
+  } else if (game.stage === "turn") {
+    game.communityCards.push(game.deck.pop());
+    game.stage = "river";
+    game.feedback = "河牌已落地。想直接看结果的话，可以摊牌了。";
+  } else if (game.stage === "river") {
+    runHoldemShowdown();
+    return;
+  }
+
+  playUiTone("soft");
+  renderApp();
+}
+
+function toggleHoldemReveal(index) {
+  const player = state.cards.holdem.players[index];
+  if (!player) {
+    return;
+  }
+  player.revealed = !player.revealed;
+  renderApp();
+}
+
+function revealAllHoldemCards() {
+  state.cards.holdem.players.forEach((player) => {
+    player.revealed = true;
+  });
+  renderApp();
+}
+
+function resetHoldemGame() {
+  state.cards.holdem = createHoldemGame({
+    handNumber: state.cards.holdem.handNumber,
+    dealerIndex: state.cards.holdem.dealerIndex,
+  });
+  renderApp();
+}
+
+function runHoldemShowdown() {
+  const game = state.cards.holdem;
+  if (game.communityCards.length < 5) {
+    return;
+  }
+
+  let bestResult = null;
+  const results = game.players.map((player) => {
+    const evaluated = evaluateBestHoldemHand([...player.holeCards, ...game.communityCards]);
+    player.revealed = true;
+    player.bestHand = evaluated;
+    if (!bestResult || compareEvaluatedHands(evaluated, bestResult) > 0) {
+      bestResult = evaluated;
+    }
+    return {
+      name: player.name,
+      result: evaluated,
+    };
+  });
+
+  const winners = results.filter((entry) => compareEvaluatedHands(entry.result, bestResult) === 0);
+  game.stage = "showdown";
+  game.showdown = {
+    winners,
+    summaries: results,
+  };
+  game.feedback =
+    winners.length > 1
+      ? `平分胜利：${winners.map((winner) => winner.name).join("、")} 同时拿下 ${bestResult.name}。`
+      : `${winners[0].name} 拿下这一局，牌型是 ${bestResult.name}。`;
+  playUiTone("success");
+  renderApp();
+}
+
+function drawBigSisterCard(options = {}) {
+  const { render = true } = options;
+  const game = state.cards.bigSister;
+  if (!game.deck.length) {
+    game.deck = shuffleArray(createDeck());
+  }
+
+  const playerNames = getEffectivePlayers();
+  const currentPlayer = playerNames[game.turnIndex % playerNames.length];
+  const card = game.deck.pop();
+  const baseRule = BIG_SISTER_RULES[card.rank];
+
+  game.currentCard = card;
+  game.currentPlayer = currentPlayer;
+  game.currentRule = {
+    title: baseRule.title,
+    detail: baseRule.detail,
+    persistent: baseRule.persistent,
+    effectText: baseRule.effectText,
+    suitHint: BIG_SISTER_SUIT_HINTS[card.suit],
+  };
+  game.turnIndex += 1;
+  game.history = [
+    {
+      id: generateId("big-sister-history"),
+      player: currentPlayer,
+      card,
+      title: baseRule.title,
+    },
+    ...game.history,
+  ].slice(0, 5);
+
+  if (baseRule.persistent) {
+    if (card.rank === "K") {
+      game.activeEffects = game.activeEffects.filter((effect) => effect.rank !== "K");
+    }
+    game.activeEffects = [
+      {
+        id: generateId("big-sister-effect"),
+        rank: card.rank,
+        owner: currentPlayer,
+        text: `${currentPlayer}：${baseRule.effectText || baseRule.title}`,
+      },
+      ...game.activeEffects,
+    ].slice(0, 5);
+  }
+
+  playUiTone("soft");
+  if (render) {
+    renderApp();
+  }
+}
+
+function resetBigSisterDeck() {
+  state.cards.bigSister = {
+    ...createBigSisterGame(),
+    showRules: state.cards.bigSister.showRules,
+  };
+  drawBigSisterCard();
+}
+
+function clearBigSisterEffects() {
+  state.cards.bigSister.activeEffects = [];
+  renderApp();
+}
+
 function getRandomBonusResult() {
   const isReward = Math.random() > 0.5;
   return {
@@ -820,6 +1546,50 @@ function toggleSound() {
     playUiTone("soft");
   }
   renderApp();
+}
+
+function copyRoomLink() {
+  const url = buildRoomLink();
+
+  const fallbackCopy = () => {
+    const textarea = document.createElement("textarea");
+    textarea.value = url;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "absolute";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand("copy");
+      state.roomNotice = "房间链接已复制。";
+    } catch (error) {
+      state.roomNotice = `请手动复制房间链接：${url}`;
+    }
+    document.body.removeChild(textarea);
+    renderApp();
+  };
+
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        state.roomNotice = "房间链接已复制。";
+        renderApp();
+      })
+      .catch(fallbackCopy);
+  } else {
+    fallbackCopy();
+  }
+}
+
+function buildRoomLink() {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("room", state.room.code);
+    return url.toString();
+  } catch (error) {
+    return `${window.location.origin}${window.location.pathname}?room=${state.room.code}`;
+  }
 }
 
 function playUiTone(type = "soft") {
@@ -885,6 +1655,24 @@ function handleClick(event) {
       break;
     case "toggle-sound":
       toggleSound();
+      break;
+    case "create-room":
+      attachToRoom(state.roomDraft.nickname, generateRoomCode(), { restoreShared: false });
+      renderApp();
+      break;
+    case "join-room":
+      attachToRoom(state.roomDraft.nickname, state.roomDraft.roomCode, { restoreShared: true });
+      renderApp();
+      break;
+    case "leave-room":
+      leaveRoom();
+      break;
+    case "copy-room-link":
+      copyRoomLink();
+      break;
+    case "fill-room-code":
+      state.roomDraft.roomCode = generateRoomCode();
+      renderApp();
       break;
     case "random-player-preview":
       state.spotlightPlayer = getRandomPlayer(state.spotlightPlayer);
@@ -979,23 +1767,72 @@ function handleClick(event) {
     case "reset-king-deck":
       resetKingDeck();
       break;
+    case "holdem-start":
+      startHoldemHand();
+      break;
+    case "holdem-next":
+      advanceHoldemStage();
+      break;
+    case "holdem-toggle-reveal":
+      toggleHoldemReveal(Number(index));
+      break;
+    case "holdem-reveal-all":
+      revealAllHoldemCards();
+      break;
+    case "holdem-reset":
+      resetHoldemGame();
+      break;
+    case "draw-big-sister":
+      drawBigSisterCard();
+      break;
+    case "reset-big-sister":
+      resetBigSisterDeck();
+      break;
+    case "clear-big-sister-effects":
+      clearBigSisterEffects();
+      break;
+    case "toggle-big-sister-rules":
+      state.cards.bigSister.showRules = !state.cards.bigSister.showRules;
+      renderApp();
+      break;
     default:
       break;
   }
 }
 
 function handleSubmit(event) {
-  if (event.target.id !== "player-form") {
+  if (event.target.id === "player-form") {
+    event.preventDefault();
+    addPlayersFromDraft();
     return;
   }
 
-  event.preventDefault();
-  addPlayersFromDraft();
+  if (event.target.id === "room-form") {
+    event.preventDefault();
+    const submitAction = event.submitter?.dataset.roomSubmit || "join";
+    if (submitAction === "create") {
+      attachToRoom(state.roomDraft.nickname, generateRoomCode(), { restoreShared: false });
+    } else {
+      attachToRoom(state.roomDraft.nickname, state.roomDraft.roomCode, { restoreShared: true });
+    }
+    renderApp();
+  }
 }
 
 function handleInput(event) {
   if (event.target.id === "player-names-input") {
     state.playerDraft = event.target.value;
+    return;
+  }
+
+  if (event.target.id === "room-nickname-input") {
+    state.roomDraft.nickname = event.target.value.slice(0, 14);
+    return;
+  }
+
+  if (event.target.id === "room-code-input") {
+    state.roomDraft.roomCode = normalizeRoomCode(event.target.value);
+    return;
   }
 }
 
@@ -1043,7 +1880,8 @@ function removePlayer(index) {
   renderApp();
 }
 
-function normalizeGamePlayers() {
+function normalizeGamePlayers(options = {}) {
+  const { resetHoldem = true } = options;
   const effectivePlayers = getEffectivePlayers();
   ["truth", "dare"].forEach((gameKey) => {
     const session = getPromptSession(gameKey);
@@ -1059,9 +1897,22 @@ function normalizeGamePlayers() {
   if (state.spotlightPlayer && !effectivePlayers.includes(state.spotlightPlayer)) {
     state.spotlightPlayer = "";
   }
+
+  if (resetHoldem) {
+    state.cards.holdem = createHoldemGame({
+      handNumber: state.cards.holdem.handNumber,
+      dealerIndex: state.cards.holdem.dealerIndex,
+    });
+  }
 }
 
 function setView(nextView) {
+  if (!state.session.joined) {
+    state.view = "home";
+    renderApp();
+    return;
+  }
+
   state.view = nextView;
 
   if (nextView === "truth") {
@@ -1078,27 +1929,52 @@ function setView(nextView) {
 }
 
 function renderApp() {
-  document.title = state.view === "home" ? "聚会小游戏酒馆" : `聚会小游戏酒馆 - ${VIEW_TITLES[state.view] || "游戏"}`;
+  const currentView = state.session.joined ? state.view : "lobby";
+  document.title =
+    currentView === "lobby" ? "聚会小游戏酒馆 - 进入房间" : `聚会小游戏酒馆 - ${VIEW_TITLES[currentView] || "游戏"}`;
+
   appRoot.innerHTML = `
     <main class="app-shell">
-      ${renderTopbar()}
+      ${renderTopbar(currentView)}
       <section class="screen">
-        ${renderCurrentView()}
+        ${renderCurrentView(currentView)}
       </section>
     </main>
   `;
+
+  if (state.session.joined) {
+    queueRoomSync();
+  }
 }
 
-function renderTopbar() {
+function renderTopbar(currentView) {
+  const roomMembers = pruneRoomMembers(state.room.members);
   return `
     <header class="topbar glass-card">
       <div>
-        <p class="eyebrow">朋友聚会现场可直接开玩</p>
+        <p class="eyebrow">${state.session.joined ? "昵称入场 · 房间模式已启用" : "朋友聚会现场可直接开玩"}</p>
         <h1>聚会小游戏酒馆</h1>
-        <p class="subtitle">轻松开场、快速点名、规则清楚，打开页面就能立刻玩起来。</p>
+        <p class="subtitle">
+          ${
+            state.session.joined
+              ? `当前房间 ${escapeHtml(state.room.code)} 正在使用浏览器本地房间模式，同浏览器标签页可以同步内容。`
+              : "先输入昵称并创建或加入房间，再一起进入同一个游戏大厅。"
+          }
+        </p>
       </div>
       <div class="topbar-actions">
-        ${state.view !== "home" ? '<button type="button" class="ghost-btn" data-action="go-home">返回主页</button>' : ""}
+        ${
+          state.session.joined
+            ? `
+              <span class="metric-pill">房间号 <strong>${escapeHtml(state.room.code)}</strong></span>
+              <span class="metric-pill">昵称 <strong>${escapeHtml(state.session.nickname)}</strong></span>
+              <span class="metric-pill"><strong>${roomMembers.length}</strong> 人在线</span>
+            `
+            : ""
+        }
+        ${state.session.joined && currentView !== "home" ? '<button type="button" class="ghost-btn" data-action="go-home">返回主页</button>' : ""}
+        ${state.session.joined ? '<button type="button" class="ghost-btn" data-action="copy-room-link">复制房间链接</button>' : ""}
+        ${state.session.joined ? '<button type="button" class="ghost-btn" data-action="leave-room">退出房间</button>' : ""}
         <button type="button" class="sound-btn ${state.soundEnabled ? "active" : ""}" data-action="toggle-sound">
           ${state.soundEnabled ? "音效已开" : "音效默认关闭"}
         </button>
@@ -1107,8 +1983,10 @@ function renderTopbar() {
   `;
 }
 
-function renderCurrentView() {
-  switch (state.view) {
+function renderCurrentView(currentView) {
+  switch (currentView) {
+    case "lobby":
+      return renderLobbyView();
     case "truth":
       return renderPromptView("truth");
     case "dare":
@@ -1124,20 +2002,110 @@ function renderCurrentView() {
   }
 }
 
+function renderLobbyView() {
+  return `
+    <section class="module-layout">
+      <div class="main-stack">
+        <article class="hero-card glass-card">
+          <div class="hero-copy">
+            <div>
+              <h2>先进入一个房间，再把今晚的游戏局开起来。</h2>
+              <p class="section-subtitle">
+                这版先采用纯前端的本地房间模式：题库和规则都写在文件里，不需要数据库就能跑；后续接 Firebase 或 Supabase 时，可以升级成真正跨设备同步。
+              </p>
+            </div>
+            <div class="hero-metrics">
+              <span class="metric-pill"><strong>${TRUTH_BANK.length}</strong> 条真心话</span>
+              <span class="metric-pill"><strong>${DARE_BANK.length}</strong> 条大冒险</span>
+              <span class="metric-pill"><strong>6</strong> 种纸牌玩法</span>
+              <span class="metric-pill"><strong>0</strong> 后端依赖也能先跑</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="section-card glass-card">
+          <div class="panel-header">
+            <div>
+              <h2 class="section-title">昵称进入房间</h2>
+              <p>创建房间会自动生成 6 位房间号；加入房间时输入房间号即可。</p>
+            </div>
+          </div>
+          <form id="room-form" class="room-form-grid">
+            <div class="form-card">
+              <h4>你的昵称</h4>
+              <p>建议 2 到 8 个字，方便现场点名。</p>
+              <input id="room-nickname-input" placeholder="例如：小林" value="${escapeHtml(state.roomDraft.nickname)}" />
+            </div>
+            <div class="form-card">
+              <h4>房间号</h4>
+              <p>加入时填写，创建时可以留空自动生成。</p>
+              <input id="room-code-input" placeholder="例如：A7K9P2" value="${escapeHtml(state.roomDraft.roomCode)}" />
+              <div class="button-row">
+                <button type="button" class="ghost-btn" data-action="fill-room-code">随机一个房间号</button>
+              </div>
+            </div>
+            <div class="button-row">
+              <button type="submit" class="primary-btn" data-room-submit="create">创建房间</button>
+              <button type="submit" class="secondary-btn" data-room-submit="join">加入房间</button>
+            </div>
+          </form>
+          ${
+            state.roomNotice
+              ? `<p class="footer-note" style="margin-top: 14px;">${escapeHtml(state.roomNotice)}</p>`
+              : '<p class="footer-note" style="margin-top: 14px;">提示：如果你已经从别人那里拿到了链接，打开后房间号会自动带入输入框。</p>'
+          }
+        </article>
+      </div>
+
+      <aside class="aside-stack">
+        <article class="side-card glass-card">
+          <div class="panel-header">
+            <div>
+              <h3 class="section-title">当前版本怎么理解</h3>
+              <p>先把“房间感”和新增玩法搭起来，后面再接真同步。</p>
+            </div>
+          </div>
+          <div class="status-grid">
+            <article>
+              <h4>题库与规则</h4>
+              <p>全部写在前端文件里，部署到 GitHub Pages 就能用。</p>
+            </article>
+            <article>
+              <h4>房间层</h4>
+              <p>已经有昵称、房间号、房间链接、房间成员展示和共享状态结构。</p>
+            </article>
+            <article>
+              <h4>真跨设备同步</h4>
+              <p>后续接 Firebase 或 Supabase 时，直接复用当前房间状态模型即可。</p>
+            </article>
+            <article>
+              <h4>新增牌类</h4>
+              <p>已准备把德州扑克和大姐牌一起放进纸牌中心。</p>
+            </article>
+          </div>
+        </article>
+        ${renderTipCard()}
+      </aside>
+    </section>
+  `;
+}
+
 function renderHomeView() {
   const effectivePlayers = getEffectivePlayers();
+  const roomMembers = pruneRoomMembers(state.room.members);
+
   return `
     <section class="hero-card glass-card">
       <div class="hero-copy">
         <div>
           <h2>今晚想玩什么？首页直接开一局。</h2>
-          <p class="section-subtitle">真心话、大冒险、二选一和四种纸牌玩法都已经内置好，适合聚会现场快速切换。</p>
+          <p class="section-subtitle">真心话、大冒险、二选一和六种纸牌玩法都已经就位，适合聚会现场快速切换。</p>
         </div>
         <div class="hero-metrics">
           <span class="metric-pill"><strong>${effectivePlayers.length}</strong> 位当前可参与玩家</span>
           <span class="metric-pill"><strong>${TRUTH_BANK.length}</strong> 条真心话</span>
           <span class="metric-pill"><strong>${DARE_BANK.length}</strong> 条大冒险</span>
-          <span class="metric-pill"><strong>4</strong> 种纸牌玩法</span>
+          <span class="metric-pill"><strong>6</strong> 种纸牌玩法</span>
         </div>
       </div>
     </section>
@@ -1151,19 +2119,48 @@ function renderHomeView() {
         <article class="section-card glass-card">
           <div class="panel-header">
             <div>
-              <h3 class="section-title">今晚玩家一览</h3>
-              <p>如果你还没手动添加名字，系统会自动使用默认玩家，随时都能直接开始。</p>
+              <h3 class="section-title">房间玩家一览</h3>
+              <p>房间成员会自动加入可随机点名名单，自定义玩家也会并入同一桌。</p>
             </div>
             <button type="button" class="secondary-btn" data-route="players">去设置玩家</button>
           </div>
           <div class="chip-row">
             ${effectivePlayers.map((name) => `<span class="small-chip">${escapeHtml(name)}</span>`).join("")}
           </div>
-          <p class="footer-note">当前${state.players.length ? "使用的是你自定义的玩家列表，并已自动保存在本地浏览器。" : "还没有自定义玩家，游戏会以默认玩家 1 至玩家 4 运行。"}
+          <p class="footer-note">
+            当前房间在线 ${roomMembers.length} 人；${state.players.length ? "你另外手动补充了自定义玩家列表。" : "如果房间里有人还没到场，也可以先去玩家设置页补录名字。"}
           </p>
+        </article>
+
+        <article class="section-card glass-card">
+          <div class="panel-header">
+            <div>
+              <h3 class="section-title">房间状态</h3>
+              <p>当前用的是纯前端房间模式，适合先把产品感和流程跑起来。</p>
+            </div>
+          </div>
+          <div class="status-grid">
+            <article>
+              <h4>房间号</h4>
+              <p>${escapeHtml(state.room.code)}</p>
+            </article>
+            <article>
+              <h4>你的昵称</h4>
+              <p>${escapeHtml(state.session.nickname)}</p>
+            </article>
+            <article>
+              <h4>同步方式</h4>
+              <p>${escapeHtml(state.room.syncMode)}</p>
+            </article>
+            <article>
+              <h4>数据库</h4>
+              <p>当前无需数据库，后续接入后即可升级为跨设备实时房间。</p>
+            </article>
+          </div>
         </article>
       </div>
       <aside class="aside-stack">
+        ${renderRoomMembersCard()}
         ${renderBonusCard()}
         ${renderTipCard()}
       </aside>
@@ -1188,8 +2185,45 @@ function renderHomeModuleCard(module) {
   `;
 }
 
+function renderRoomMembersCard() {
+  const roomMembers = pruneRoomMembers(state.room.members);
+  return `
+    <article class="side-card glass-card">
+      <div class="panel-header">
+        <div>
+          <h3 class="section-title">房间成员</h3>
+          <p>这部分来自房间登录信息，和手动玩家名单会自动合并使用。</p>
+        </div>
+      </div>
+      ${
+        roomMembers.length
+          ? `
+            <div class="player-list compact-list">
+              ${roomMembers
+                .map(
+                  (member) => `
+                    <div class="player-row">
+                      <div>
+                        <strong>${escapeHtml(member.nickname)}</strong>
+                        <span>${member.id === state.session.memberId ? "你" : "房间成员"}</span>
+                      </div>
+                    </div>
+                  `,
+                )
+                .join("")}
+            </div>
+          `
+          : `<div class="empty-state">当前还只有你自己在这个房间里。</div>`
+      }
+    </article>
+  `;
+}
+
 function renderPlayersView() {
   const effectivePlayers = getEffectivePlayers();
+  const roomMembers = pruneRoomMembers(state.room.members);
+  const customOnlyPlayers = state.players.filter((name) => !roomMembers.some((member) => member.nickname === name));
+
   return `
     <section class="module-layout">
       <div class="main-stack">
@@ -1197,7 +2231,7 @@ function renderPlayersView() {
           <div class="panel-header">
             <div>
               <h2 class="section-title">自定义玩家设置</h2>
-              <p>支持逗号、顿号、分号或换行批量添加。当前页修改后，其他游戏会立刻读取同一份玩家列表。</p>
+              <p>支持逗号、顿号、分号或换行批量添加。房间成员会自动入桌，你也可以额外补充不在线的朋友。</p>
             </div>
           </div>
 
@@ -1216,36 +2250,62 @@ function renderPlayersView() {
 
           <div class="panel-header" style="margin-top: 18px;">
             <div>
-              <h3 class="section-title">玩家列表</h3>
-              <p>${state.players.length ? `已设置 ${state.players.length} 位自定义玩家。` : "目前还没有自定义玩家，游戏会自动使用默认玩家。"}</p>
+              <h3 class="section-title">当前实际会参与点名的名单</h3>
+              <p>房间成员与自定义玩家会自动合并，所有游戏都从这份名单里随机点名。</p>
             </div>
           </div>
+          <div class="chip-row">
+            ${effectivePlayers.map((name) => `<span class="small-chip">${escapeHtml(name)}</span>`).join("")}
+          </div>
 
-          <div class="player-list">
-            ${
-              state.players.length
-                ? state.players
-                    .map(
-                      (name, index) => `
-                      <div class="player-row">
-                        <div>
-                          <strong>${escapeHtml(name)}</strong>
-                          <span>自定义玩家</span>
-                        </div>
-                        <button type="button" class="ghost-btn" data-action="remove-player" data-index="${index}">删除</button>
-                      </div>
-                    `,
-                    )
-                    .join("")
-                : `
-                    <div class="empty-state">
-                      你还没有录入自定义玩家。下面这组默认玩家会在所有游戏里自动生效：
-                      <div class="chip-row" style="margin-top: 12px;">
-                        ${effectivePlayers.map((name) => `<span class="small-chip">${escapeHtml(name)}</span>`).join("")}
-                      </div>
-                    </div>
-                  `
-            }
+          <div class="two-column" style="margin-top: 18px;">
+            <div class="form-card">
+              <h4>房间成员</h4>
+              <p>${roomMembers.length ? `当前在线 ${roomMembers.length} 人。` : "当前只有你自己在房间中。"}</p>
+              <div class="player-list compact-list">
+                ${
+                  roomMembers.length
+                    ? roomMembers
+                        .map(
+                          (member) => `
+                            <div class="player-row">
+                              <div>
+                                <strong>${escapeHtml(member.nickname)}</strong>
+                                <span>${member.id === state.session.memberId ? "你" : "房间成员"}</span>
+                              </div>
+                            </div>
+                          `,
+                        )
+                        .join("")
+                    : '<div class="empty-state">房间成员会在这里出现。</div>'
+                }
+              </div>
+            </div>
+
+            <div class="form-card">
+              <h4>额外补充玩家</h4>
+              <p>${customOnlyPlayers.length ? `你手动补充了 ${customOnlyPlayers.length} 位未在线玩家。` : "目前没有额外补充玩家。"}</p>
+              <div class="player-list compact-list">
+                ${
+                  customOnlyPlayers.length
+                    ? customOnlyPlayers
+                        .map((name) => {
+                          const index = state.players.indexOf(name);
+                          return `
+                            <div class="player-row">
+                              <div>
+                                <strong>${escapeHtml(name)}</strong>
+                                <span>自定义补充</span>
+                              </div>
+                              <button type="button" class="ghost-btn" data-action="remove-player" data-index="${index}">删除</button>
+                            </div>
+                          `;
+                        })
+                        .join("")
+                    : '<div class="empty-state">如果有人没进房，但你想把他也算进游戏里，可以在上面补录名字。</div>'
+                }
+              </div>
+            </div>
           </div>
         </article>
       </div>
@@ -1261,15 +2321,15 @@ function renderPlayersView() {
           <div class="player-showcase">
             <small>当前抽中的玩家</small>
             <h3>${escapeHtml(state.spotlightPlayer || "点击按钮随机选择一位")}</h3>
-            <p>${state.spotlightPlayer ? "这位玩家会在其他模块里正常参与随机点名。" : "如果没有自定义玩家，系统会从默认玩家中抽取。"}</p>
+            <p>${state.spotlightPlayer ? "这位玩家会在其他模块里正常参与随机点名。" : "如果名单暂时为空，系统会自动补默认玩家。"}</p>
           </div>
           <div class="button-row">
             <button type="button" class="primary-btn" data-action="random-player-preview">随机选择当前玩家</button>
             <button type="button" class="ghost-btn" data-route="home">返回主页</button>
           </div>
         </article>
+        ${renderRoomMembersCard()}
         ${renderBonusCard()}
-        ${renderTipCard()}
       </aside>
     </section>
   `;
@@ -1346,7 +2406,7 @@ function renderPromptView(gameKey) {
             </article>
             <article>
               <h4>玩家来源</h4>
-              <p>${state.players.length ? "自定义玩家列表" : "默认玩家列表"}</p>
+              <p>${state.room.members.length ? "房间成员 + 自定义玩家" : "默认玩家或自定义玩家"}</p>
             </article>
           </div>
         </article>
@@ -1402,7 +2462,7 @@ function renderTruthOrDareView() {
                 </div>
               `
               : `
-                <div class="result-card" data-tone="neutral" style="margin-top: 16px;">
+                <div class="result-card" style="margin-top: 16px;">
                   <small>选择方式</small>
                   <h3>由玩家自己选，或者让命运替你决定。</h3>
                   <div class="button-row">
@@ -1439,7 +2499,7 @@ function renderTruthOrDareView() {
             </article>
             <article>
               <h4>玩家来源</h4>
-              <p>${state.players.length ? "自定义玩家列表" : "默认玩家列表"}</p>
+              <p>${state.room.members.length ? "房间成员 + 自定义玩家" : "默认玩家或自定义玩家"}</p>
             </article>
           </div>
         </article>
@@ -1462,7 +2522,7 @@ function renderCardsView() {
           <div class="panel-header">
             <div>
               <h2 class="section-title">纸牌小游戏中心</h2>
-              <p>一副虚拟扑克牌，四种现场可直接执行的聚会玩法。切换标签就能马上换游戏。</p>
+              <p>一副虚拟扑克牌，六种现场可直接执行的聚会玩法。切换标签就能马上换游戏。</p>
             </div>
           </div>
 
@@ -1506,6 +2566,8 @@ function renderCardTabs() {
     { key: "highlow", label: "高低牌猜猜" },
     { key: "roulette", label: "轮盘指令牌" },
     { key: "king", label: "国王指令简化版" },
+    { key: "holdem", label: "聚会德州扑克" },
+    { key: "bigsister", label: "大姐牌（聚会版）" },
   ];
 
   return tabs
@@ -1532,6 +2594,10 @@ function renderActiveCardGame() {
       return renderRouletteGame();
     case "king":
       return renderKingGame();
+    case "holdem":
+      return renderHoldemGame();
+    case "bigsister":
+      return renderBigSisterGame();
     default:
       return renderLuckyGame();
   }
@@ -1678,6 +2744,213 @@ function renderKingGame() {
   `;
 }
 
+function renderHoldemGame() {
+  const game = state.cards.holdem;
+  const playerNames = getTablePlayers(2, HOLD_EM_MAX_PLAYERS);
+  return `
+    <div class="main-stack">
+      <div class="toggle-row">
+        <div>
+          <h3 class="section-title">聚会德州扑克</h3>
+          <p class="section-subtitle">聚会版不做真钱下注，重点是发牌、翻牌、摊牌和自动判牌型，适合围着屏幕一起猜谁会赢。</p>
+        </div>
+        <span class="deck-chip">当前桌上 ${playerNames.length} 人参与</span>
+      </div>
+
+      <div class="community-wrap">
+        <div class="community-row">
+          ${renderCommunityCards(game.communityCards)}
+        </div>
+        <div class="score-panel">
+          <div class="score-box">
+            <span>当前阶段</span>
+            <strong>${getHoldemStageLabel(game.stage)}</strong>
+          </div>
+          <div class="score-box">
+            <span>手数</span>
+            <strong>${game.handNumber}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button type="button" class="primary-btn" data-action="holdem-start">${game.stage === "idle" ? "发新一局" : "重新发一局"}</button>
+        <button type="button" class="secondary-btn" data-action="holdem-next">${game.stage === "river" ? "摊牌" : game.stage === "showdown" ? "下一局" : "下一阶段"}</button>
+        <button type="button" class="ghost-btn" data-action="holdem-reveal-all">全部亮牌</button>
+        <button type="button" class="ghost-btn" data-action="holdem-reset">清空桌面</button>
+      </div>
+
+      <div class="result-card">
+        <small>主持提示</small>
+        <h3>${escapeHtml(game.feedback)}</h3>
+        <p>${game.players.length ? `庄位目前是 ${escapeHtml(game.players[game.dealerIndex]?.name || "-")}。` : "一局开始后会自动按当前房间玩家发牌。"}</p>
+      </div>
+
+      ${
+        game.showdown
+          ? `
+            <div class="command-card">
+              <small>摊牌结果</small>
+              <h3>${escapeHtml(game.feedback)}</h3>
+              <div class="rules-list">
+                ${game.showdown.summaries
+                  .map(
+                    (entry) => `
+                      <div class="rule-item">
+                        <div class="rule-rank">${escapeHtml(entry.result.shortName)}</div>
+                        <div>
+                          <strong>${escapeHtml(entry.name)}</strong>
+                          <p style="margin: 6px 0 0; color: var(--text-muted);">${escapeHtml(entry.result.name)}</p>
+                        </div>
+                      </div>
+                    `,
+                  )
+                  .join("")}
+              </div>
+            </div>
+          `
+          : ""
+      }
+
+      <div class="holdem-player-grid">
+        ${
+          game.players.length
+            ? game.players
+                .map(
+                  (player, index) => `
+                    <article class="player-hand-card">
+                      <div class="toggle-row">
+                        <div>
+                          <strong>${escapeHtml(player.name)}</strong>
+                          <p class="footer-note">${index === game.dealerIndex ? "本局庄位" : "参与玩家"}</p>
+                        </div>
+                        <button type="button" class="ghost-btn" data-action="holdem-toggle-reveal" data-index="${index}">
+                          ${player.revealed ? "藏回底牌" : "看底牌"}
+                        </button>
+                      </div>
+                      <div class="mini-card-row">
+                        ${player.revealed ? player.holeCards.map((card) => renderMiniCard(card)).join("") : renderHiddenMiniCards()}
+                      </div>
+                      ${
+                        player.bestHand
+                          ? `<p class="footer-note">最佳牌型：${escapeHtml(player.bestHand.name)}</p>`
+                          : '<p class="footer-note">摊牌后会自动计算这位玩家的最佳五张牌型。</p>'
+                      }
+                    </article>
+                  `,
+                )
+                .join("")
+            : `
+                <div class="empty-state">
+                  当前会自动使用房间成员和自定义玩家开桌。点击“发新一局”后，每位玩家都会得到 2 张底牌。
+                </div>
+              `
+        }
+      </div>
+
+      <div class="rules-card">
+        <h4>玩法说明</h4>
+        <p>流程是底牌 2 张、翻牌圈 3 张、转牌 1 张、河牌 1 张。系统会自动比较每位玩家的最佳五张牌并给出赢家，不做真钱下注，只保留最有意思的看牌与比牌节奏。</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderBigSisterGame() {
+  const game = state.cards.bigSister;
+  return `
+    <div class="two-column">
+      <div class="card-showcase">
+        ${renderPlayingCard(game.currentCard)}
+        <div class="card-meta">
+          <span class="deck-chip">牌堆剩余 ${game.deck.length} 张</span>
+          <div class="button-row">
+            <button type="button" class="primary-btn" data-action="draw-big-sister">抽下一张</button>
+            <button type="button" class="ghost-btn" data-action="reset-big-sister">重新洗牌</button>
+            <button type="button" class="ghost-btn" data-action="toggle-big-sister-rules">${game.showRules ? "收起完整规则" : "查看完整规则"}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="main-stack">
+        <div class="command-card">
+          <small>当前轮到</small>
+          <h3>${escapeHtml(game.currentPlayer || "等待抽牌")}</h3>
+          <p>${game.currentRule ? escapeHtml(game.currentRule.title) : "点击抽牌后生成大姐牌任务。"}${game.currentRule ? ` ${escapeHtml(game.currentRule.detail)}` : ""}</p>
+          ${game.currentRule ? `<p class="footer-note">${escapeHtml(game.currentRule.suitHint)}</p>` : ""}
+        </div>
+
+        <div class="rules-card">
+          <div class="toggle-row">
+            <h4>当前持续效果</h4>
+            <button type="button" class="ghost-btn" data-action="clear-big-sister-effects">清空持续效果</button>
+          </div>
+          ${
+            game.activeEffects.length
+              ? `
+                <div class="rules-list">
+                  ${game.activeEffects
+                    .map(
+                      (effect) => `
+                        <div class="rule-item">
+                          <div class="rule-rank">${escapeHtml(effect.rank)}</div>
+                          <div>
+                            <strong>${escapeHtml(effect.owner)}</strong>
+                            <p style="margin: 6px 0 0; color: var(--text-muted);">${escapeHtml(effect.text)}</p>
+                          </div>
+                        </div>
+                      `,
+                    )
+                    .join("")}
+                </div>
+              `
+              : `<p>当前没有持续生效的大姐牌规则，抽到 K、Q、A、7、3 这类牌时会产生更强的连锁效果。</p>`
+          }
+        </div>
+
+        <div class="rules-card">
+          <h4>最近抽牌记录</h4>
+          ${
+            game.history.length
+              ? `
+                <div class="rules-list">
+                  ${game.history
+                    .map(
+                      (entry) => `
+                        <div class="rule-item">
+                          <div class="rule-rank">${escapeHtml(entry.card.rank)}</div>
+                          <div>
+                            <strong>${escapeHtml(entry.player)}</strong>
+                            <p style="margin: 6px 0 0; color: var(--text-muted);">${escapeHtml(entry.title)} · ${escapeHtml(entry.card.suitName)}</p>
+                          </div>
+                        </div>
+                      `,
+                    )
+                    .join("")}
+                </div>
+              `
+              : `<p>抽牌后这里会记录最近几轮的大姐牌历史。</p>`
+          }
+        </div>
+
+        ${
+          game.showRules
+            ? `
+              <div class="rules-card">
+                <h4>完整规则</h4>
+                <p>这是一版偏“小姐牌进阶”感觉的聚会 house rules：更强调持续效果、搭子关系和全桌口头规则。</p>
+                <div class="rules-list">
+                  ${BIG_SISTER_RULE_ORDER.map((rank) => renderMiniRule(rank, BIG_SISTER_RULES[rank].title, BIG_SISTER_RULES[rank].detail)).join("")}
+                </div>
+              </div>
+            `
+            : ""
+        }
+      </div>
+    </div>
+  `;
+}
+
 function renderMiniRule(rank, title, detail) {
   return `
     <div class="rule-item">
@@ -1714,6 +2987,41 @@ function renderPlayingCard(card) {
       </div>
     </div>
   `;
+}
+
+function renderMiniCard(card) {
+  return `
+    <div class="mini-card ${card.color}">
+      <span>${escapeHtml(card.rank)}</span>
+      <span>${escapeHtml(card.suit)}</span>
+    </div>
+  `;
+}
+
+function renderHiddenMiniCards() {
+  return `
+    <div class="mini-card mini-card-back"><span>?</span><span>♠</span></div>
+    <div class="mini-card mini-card-back"><span>?</span><span>♥</span></div>
+  `;
+}
+
+function renderCommunityCards(cards) {
+  const slots = Array.from({ length: 5 }, (_, index) => cards[index] || null);
+  return slots
+    .map((card) => (card ? renderMiniCard(card) : '<div class="mini-card mini-card-placeholder">待翻</div>'))
+    .join("");
+}
+
+function getHoldemStageLabel(stage) {
+  const labels = {
+    idle: "未开始",
+    preflop: "底牌",
+    flop: "翻牌圈",
+    turn: "转牌",
+    river: "河牌",
+    showdown: "摊牌",
+  };
+  return labels[stage] || "未开始";
 }
 
 function renderSwitchGameCard(currentView) {
@@ -1819,6 +3127,172 @@ function getLevelClassName(level) {
     return "level-fun";
   }
   return "level-spicy";
+}
+
+function compareEvaluatedHands(left, right) {
+  if (left.rankClass !== right.rankClass) {
+    return left.rankClass - right.rankClass;
+  }
+
+  for (let index = 0; index < Math.max(left.tieBreak.length, right.tieBreak.length); index += 1) {
+    const leftValue = left.tieBreak[index] || 0;
+    const rightValue = right.tieBreak[index] || 0;
+    if (leftValue !== rightValue) {
+      return leftValue - rightValue;
+    }
+  }
+
+  return 0;
+}
+
+function evaluateBestHoldemHand(cards) {
+  const combinations = chooseCardCombinations(cards, 5);
+  let best = null;
+
+  combinations.forEach((combo) => {
+    const evaluated = evaluateFiveCardHand(combo);
+    if (!best || compareEvaluatedHands(evaluated, best) > 0) {
+      best = evaluated;
+    }
+  });
+
+  return best;
+}
+
+function chooseCardCombinations(cards, pickCount, startIndex = 0, prefix = [], output = []) {
+  if (prefix.length === pickCount) {
+    output.push(prefix);
+    return output;
+  }
+
+  for (let index = startIndex; index <= cards.length - (pickCount - prefix.length); index += 1) {
+    chooseCardCombinations(cards, pickCount, index + 1, [...prefix, cards[index]], output);
+  }
+
+  return output;
+}
+
+function evaluateFiveCardHand(cards) {
+  const values = cards.map((card) => card.value).sort((left, right) => right - left);
+  const valueCounts = new Map();
+  values.forEach((value) => {
+    valueCounts.set(value, (valueCounts.get(value) || 0) + 1);
+  });
+
+  const groups = [...valueCounts.entries()]
+    .map(([value, count]) => ({ value, count }))
+    .sort((left, right) => right.count - left.count || right.value - left.value);
+
+  const flush = new Set(cards.map((card) => card.suit)).size === 1;
+  const straightHigh = getStraightHigh(values);
+
+  if (flush && straightHigh) {
+    const isRoyal = straightHigh === 14 && values.includes(10);
+    return {
+      rankClass: 8,
+      tieBreak: [straightHigh],
+      name: isRoyal ? "皇家同花顺" : "同花顺",
+      shortName: isRoyal ? "皇家" : "同花顺",
+    };
+  }
+
+  if (groups[0].count === 4) {
+    return {
+      rankClass: 7,
+      tieBreak: [groups[0].value, groups[1].value],
+      name: "四条",
+      shortName: "四条",
+    };
+  }
+
+  if (groups[0].count === 3 && groups[1].count === 2) {
+    return {
+      rankClass: 6,
+      tieBreak: [groups[0].value, groups[1].value],
+      name: "葫芦",
+      shortName: "葫芦",
+    };
+  }
+
+  if (flush) {
+    return {
+      rankClass: 5,
+      tieBreak: values,
+      name: "同花",
+      shortName: "同花",
+    };
+  }
+
+  if (straightHigh) {
+    return {
+      rankClass: 4,
+      tieBreak: [straightHigh],
+      name: "顺子",
+      shortName: "顺子",
+    };
+  }
+
+  if (groups[0].count === 3) {
+    const kickers = groups.slice(1).map((group) => group.value).sort((left, right) => right - left);
+    return {
+      rankClass: 3,
+      tieBreak: [groups[0].value, ...kickers],
+      name: "三条",
+      shortName: "三条",
+    };
+  }
+
+  if (groups[0].count === 2 && groups[1].count === 2) {
+    const pairValues = groups
+      .filter((group) => group.count === 2)
+      .map((group) => group.value)
+      .sort((left, right) => right - left);
+    const kicker = groups.find((group) => group.count === 1)?.value || 0;
+    return {
+      rankClass: 2,
+      tieBreak: [...pairValues, kicker],
+      name: "两对",
+      shortName: "两对",
+    };
+  }
+
+  if (groups[0].count === 2) {
+    const kickers = groups.slice(1).map((group) => group.value).sort((left, right) => right - left);
+    return {
+      rankClass: 1,
+      tieBreak: [groups[0].value, ...kickers],
+      name: "一对",
+      shortName: "一对",
+    };
+  }
+
+  return {
+    rankClass: 0,
+    tieBreak: values,
+    name: "高牌",
+    shortName: "高牌",
+  };
+}
+
+function getStraightHigh(values) {
+  const uniqueValues = [...new Set(values)];
+  if (uniqueValues.includes(14)) {
+    uniqueValues.push(1);
+  }
+
+  let streak = 1;
+  for (let index = 0; index < uniqueValues.length - 1; index += 1) {
+    if (uniqueValues[index] - 1 === uniqueValues[index + 1]) {
+      streak += 1;
+      if (streak >= 5) {
+        return uniqueValues[index - 3];
+      }
+    } else {
+      streak = 1;
+    }
+  }
+
+  return 0;
 }
 
 function escapeHtml(value) {

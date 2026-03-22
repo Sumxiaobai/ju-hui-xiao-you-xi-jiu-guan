@@ -761,6 +761,89 @@ textarea {
   gap: 12px;
 }
 
+.room-form-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.room-form-grid .button-row {
+  margin-top: 0;
+}
+
+.compact-list .player-row {
+  padding-block: 12px;
+}
+
+.community-wrap,
+.player-hand-card {
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.025));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.community-wrap {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.community-row,
+.mini-card-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.community-row {
+  justify-content: center;
+}
+
+.mini-card {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  width: 68px;
+  height: 92px;
+  border-radius: 18px;
+  background: linear-gradient(165deg, #fff8f1 0%, #f2e6d8 100%);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  font-weight: 800;
+  color: #241e18;
+}
+
+.mini-card.red {
+  color: #b63a2c;
+}
+
+.mini-card.black {
+  color: #241e18;
+}
+
+.mini-card-back,
+.mini-card-placeholder {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+.holdem-player-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.player-hand-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.player-hand-card strong {
+  font-size: 1.04rem;
+}
+
 .footer-note {
   margin-top: 10px;
   color: var(--text-muted);
@@ -777,6 +860,14 @@ textarea {
     align-items: center;
   }
 
+  .room-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .room-form-grid .button-row {
+    grid-column: 1 / -1;
+  }
+
   .two-column,
   .status-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -791,6 +882,10 @@ textarea {
   .game-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .holdem-player-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 980px) {
@@ -802,6 +897,10 @@ textarea {
 
 @media (min-width: 1100px) {
   .game-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .holdem-player-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
