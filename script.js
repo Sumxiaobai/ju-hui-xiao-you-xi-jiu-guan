@@ -876,6 +876,9 @@ function formatFirebaseError(error) {
   if (code.includes("auth/operation-not-allowed")) {
     return "请在 Firebase 控制台开启匿名登录。";
   }
+  if (code.includes("auth/configuration-not-found") || message.includes("CONFIGURATION_NOT_FOUND")) {
+    return "请到 Firebase 控制台的 Authentication 里先点“开始使用”，再在登录方式中开启匿名登录。";
+  }
   if (code.includes("auth/unauthorized-domain") || message.includes("authorized domain")) {
     return "请把当前站点域名加入 Firebase 授权域名。";
   }
