@@ -521,6 +521,7 @@ function createFirebaseRuntime() {
     roomCode: "",
     connected: false,
     joinToken: "",
+    authMode: "pending",
   };
 }
 
@@ -532,9 +533,13 @@ function isFirebaseRoomActive() {
   return firebaseRuntime.connected && firebaseRuntime.roomCode === state.room.code;
 }
 
+function isFirebaseGuestMode() {
+  return firebaseRuntime.authMode === "guest";
+}
+
 function getRoomSyncEngineText() {
   if (isFirebaseRoomActive()) {
-    return "Firebase 匿名登录 + Firestore 实时同步";
+    return isFirebaseGuestMode() ? "Firebase 实时同步（游客模式）" : "Firebase 匿名登录 + Firestore 实时同步";
   }
   if (hasFirebaseConfig() && state.room.connectionState === "connecting") {
     return "正在建立 Firebase 实时连接";
@@ -551,7 +556,9 @@ function getJoinedRoomSubtitle() {
   }
 
   if (isFirebaseRoomActive()) {
-    return `当前房间 ${state.room.code} 已接入 Firebase 实时同步，不同手机或电脑进入同一房间后会共享内容。`;
+    return isFirebaseGuestMode()
+      ? `当前房间 ${state.room.code} 已接入 Firebase 实时同步，不同手机或电脑进入同一房间后会共享内容。当前使用的是轻量游客模式。`
+      : `当前房间 ${state.room.code} 已接入 Firebase 实时同步，不同手机或电脑进入同一房间后会共享内容。`;
   }
 
   if (hasFirebaseConfig() && state.room.connectionState === "connecting") {
@@ -574,7 +581,9 @@ function getLobbyModeDescription() {
 
 function getDatabaseStatusText() {
   if (isFirebaseRoomActive() || (hasFirebaseConfig() && state.room.connectionState === "connecting")) {
-    return "已接入 Firestore，用于保存房间共享状态与成员在线信息。";
+    return isFirebaseGuestMode()
+      ? "已接入 Firestore，用于保存房间共享状态与成员在线信息；当前使用游客模式，不依赖 Firebase Authentication。"
+      : "已接入 Firestore，用于保存房间共享状态与成员在线信息。";
   }
   if (hasFirebaseConfig() && state.room.connectionState === "error") {
     return "Firebase 已配置，但当前连接失败；请检查授权域名、匿名登录和 Firestore 规则。";
@@ -850,11 +859,21 @@ async function ensureFirebaseServices() {
     firebaseRuntime.auth = firebaseRuntime.app.auth();
     firebaseRuntime.db = firebaseRuntime.app.firestore();
 
-    if (!firebaseRuntime.auth.currentUser) {
-      const credential = await firebaseRuntime.auth.signInAnonymously();
-      firebaseRuntime.user = credential.user || firebaseRuntime.auth.currentUser;
-    } else {
+    if (firebaseRuntime.auth.currentUser) {
       firebaseRuntime.user = firebaseRuntime.auth.currentUser;
+      firebaseRuntime.authMode = "anonymous";
+    } else {
+      try {
+        const credential = await firebaseRuntime.auth.signInAnonymously();
+        firebaseRuntime.user = credential.user || firebaseRuntime.auth.currentUser;
+        firebaseRuntime.authMode = "anonymous";
+      } catch (error) {
+        if (!shouldAllowFirebaseGuestMode(error)) {
+          throw error;
+        }
+        firebaseRuntime.user = null;
+        firebaseRuntime.authMode = "guest";
+      }
     }
 
     return firebaseRuntime;
@@ -864,6 +883,19 @@ async function ensureFirebaseServices() {
   });
 
   return firebaseRuntime.initPromise;
+}
+
+function shouldAllowFirebaseGuestMode(error) {
+  const code = error?.code || "";
+  const message = String(error?.message || "");
+  return (
+    code.includes("auth/configuration-not-found") ||
+    code.includes("auth/operation-not-allowed") ||
+    code.includes("auth/unauthorized-domain") ||
+    message.includes("CONFIGURATION_NOT_FOUND") ||
+    message.includes("operation-not-allowed") ||
+    message.includes("authorized domain")
+  );
 }
 
 function formatFirebaseError(error) {
@@ -1078,7 +1110,7 @@ async function connectFirebaseRoom(options = {}) {
     state.room.syncMode = "Firebase 实时房间";
     await writeFirebasePresence();
     state.room.members = upsertRoomMember(state.room.members, getCurrentMemberPresence());
-    state.roomNotice = `已进入房间 ${roomCode}，当前为 Firebase 实时同步模式。`;
+    state.roomNotice = `已进入房间 ${roomCode}，当前为 Firebase 实时同步模式。${isFirebaseGuestMode() ? "当前使用游客模式，不依赖单独登录。" : ""}`;
     renderApp();
     return true;
   } catch (error) {
