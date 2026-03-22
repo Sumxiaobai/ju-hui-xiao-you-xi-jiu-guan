@@ -22,6 +22,8 @@ const DEFAULT_PLAYER_COUNT = 4;
 const ROOM_MEMBER_TTL = 35000;
 const ROOM_HEARTBEAT_MS = 12000;
 const HOLD_EM_MAX_PLAYERS = 8;
+const FIREBASE_SDK_VERSION = window.PARTY_TAVERN_FIREBASE?.sdkVersion || "12.5.0";
+const DEFAULT_FIREBASE_COLLECTION = "partyRooms";
 
 const HOME_MODULES = [
   {
@@ -418,6 +420,7 @@ const state = createInitialState();
 let audioContext = null;
 let roomHeartbeatTimer = null;
 let roomSyncTimer = null;
+const firebaseRuntime = createFirebaseRuntime();
 
 document.addEventListener("click", handleClick);
 document.addEventListener("submit", handleSubmit);
@@ -479,11 +482,104 @@ function createSessionState() {
 function createRoomRuntimeState() {
   return {
     code: "",
-    syncMode: "浏览器本地房间",
+    syncMode: getDefaultRoomSyncMode(),
     members: [],
     lastUpdatedAt: 0,
     lastSharedHash: "",
+    connectionState: hasFirebaseConfig() ? "idle" : "local",
+    remoteError: "",
   };
+}
+
+function getFirebaseOptions() {
+  return window.PARTY_TAVERN_FIREBASE || {};
+}
+
+function getFirebaseCollectionName() {
+  return getFirebaseOptions().collection || DEFAULT_FIREBASE_COLLECTION;
+}
+
+function hasFirebaseConfig() {
+  const config = getFirebaseOptions().config;
+  return Boolean(config?.apiKey && config?.projectId && config?.appId);
+}
+
+function createFirebaseRuntime() {
+  return {
+    enabled: hasFirebaseConfig(),
+    scripts: new Map(),
+    initPromise: null,
+    firebase: null,
+    app: null,
+    auth: null,
+    db: null,
+    user: null,
+    roomUnsubscribe: null,
+    membersUnsubscribe: null,
+    roomRef: null,
+    membersRef: null,
+    roomCode: "",
+    connected: false,
+    joinToken: "",
+  };
+}
+
+function getDefaultRoomSyncMode() {
+  return hasFirebaseConfig() ? "Firebase 实时房间待连接" : "浏览器本地房间";
+}
+
+function isFirebaseRoomActive() {
+  return firebaseRuntime.connected && firebaseRuntime.roomCode === state.room.code;
+}
+
+function getRoomSyncEngineText() {
+  if (isFirebaseRoomActive()) {
+    return "Firebase 匿名登录 + Firestore 实时同步";
+  }
+  if (hasFirebaseConfig() && state.room.connectionState === "connecting") {
+    return "正在建立 Firebase 实时连接";
+  }
+  if (hasFirebaseConfig() && state.room.connectionState === "error") {
+    return "Firebase 连接失败，已自动降级到本地房间";
+  }
+  return "浏览器本地房间（无后端）";
+}
+
+function getJoinedRoomSubtitle() {
+  if (!state.session.joined) {
+    return "先输入昵称登录并创建或加入房间，再一起进入同一个游戏大厅。";
+  }
+
+  if (isFirebaseRoomActive()) {
+    return `当前房间 ${state.room.code} 已接入 Firebase 实时同步，不同手机或电脑进入同一房间后会共享内容。`;
+  }
+
+  if (hasFirebaseConfig() && state.room.connectionState === "connecting") {
+    return `当前房间 ${state.room.code} 正在连接 Firebase 实时房间，连接完成后会自动切换成跨设备同步。`;
+  }
+
+  if (hasFirebaseConfig() && state.room.connectionState === "error") {
+    return `当前房间 ${state.room.code} 已回退到浏览器本地房间模式。${state.room.remoteError || "请检查 Firebase 配置与权限。"}`;
+  }
+
+  return `当前房间 ${state.room.code} 正在使用浏览器本地房间模式，同浏览器标签页可以同步内容。`;
+}
+
+function getLobbyModeDescription() {
+  if (hasFirebaseConfig()) {
+    return "已检测到 Firebase 配置：进入房间后会用匿名身份登录，并通过 Firestore 在不同设备之间实时同步。题库和规则仍然全部写在前端文件里。";
+  }
+  return "当前默认是纯前端本地房间模式：题库和规则都写在文件里，不需要数据库就能跑；按项目里的 FIREBASE_SETUP.md 填入配置后，就能升级成真正跨设备同步。";
+}
+
+function getDatabaseStatusText() {
+  if (isFirebaseRoomActive() || (hasFirebaseConfig() && state.room.connectionState === "connecting")) {
+    return "已接入 Firestore，用于保存房间共享状态与成员在线信息。";
+  }
+  if (hasFirebaseConfig() && state.room.connectionState === "error") {
+    return "Firebase 已配置，但当前连接失败；请检查授权域名、匿名登录和 Firestore 规则。";
+  }
+  return "当前未接数据库，仍可本地玩；按项目里的 FIREBASE_SETUP.md 配置后即可升级成跨设备同步。";
 }
 
 function createPromptSession() {
@@ -688,6 +784,311 @@ function replaceRoomUrl(code = "") {
   }
 }
 
+function loadExternalScript(src) {
+  if (firebaseRuntime.scripts.has(src)) {
+    return firebaseRuntime.scripts.get(src);
+  }
+
+  const promise = new Promise((resolve, reject) => {
+    const existing = Array.from(document.scripts).find((script) => script.src === src);
+    if (existing?.dataset.loaded === "true") {
+      resolve();
+      return;
+    }
+
+    const script = existing || document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.dataset.externalSrc = src;
+    script.addEventListener(
+      "load",
+      () => {
+        script.dataset.loaded = "true";
+        resolve();
+      },
+      { once: true },
+    );
+    script.addEventListener(
+      "error",
+      () => {
+        reject(new Error(`无法加载外部脚本：${src}`));
+      },
+      { once: true },
+    );
+
+    if (!existing) {
+      document.head.appendChild(script);
+    }
+  });
+
+  firebaseRuntime.scripts.set(src, promise);
+  return promise;
+}
+
+async function ensureFirebaseServices() {
+  if (!hasFirebaseConfig()) {
+    return null;
+  }
+
+  if (firebaseRuntime.initPromise) {
+    return firebaseRuntime.initPromise;
+  }
+
+  firebaseRuntime.initPromise = (async () => {
+    const baseUrl = `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}`;
+    await loadExternalScript(`${baseUrl}/firebase-app-compat.js`);
+    await loadExternalScript(`${baseUrl}/firebase-auth-compat.js`);
+    await loadExternalScript(`${baseUrl}/firebase-firestore-compat.js`);
+
+    if (!window.firebase) {
+      throw new Error("Firebase SDK 未正确加载。");
+    }
+
+    firebaseRuntime.firebase = window.firebase;
+    const config = getFirebaseOptions().config;
+    firebaseRuntime.app = window.firebase.apps.length ? window.firebase.app() : window.firebase.initializeApp(config);
+    firebaseRuntime.auth = firebaseRuntime.app.auth();
+    firebaseRuntime.db = firebaseRuntime.app.firestore();
+
+    if (!firebaseRuntime.auth.currentUser) {
+      const credential = await firebaseRuntime.auth.signInAnonymously();
+      firebaseRuntime.user = credential.user || firebaseRuntime.auth.currentUser;
+    } else {
+      firebaseRuntime.user = firebaseRuntime.auth.currentUser;
+    }
+
+    return firebaseRuntime;
+  })().catch((error) => {
+    firebaseRuntime.initPromise = null;
+    throw error;
+  });
+
+  return firebaseRuntime.initPromise;
+}
+
+function formatFirebaseError(error) {
+  const code = error?.code || "";
+  const message = String(error?.message || "");
+
+  if (window.location.protocol === "file:") {
+    return "请通过 GitHub Pages 或本地静态服务器访问，file:// 环境无法完成 Firebase 匿名登录。";
+  }
+  if (code.includes("auth/operation-not-allowed")) {
+    return "请在 Firebase 控制台开启匿名登录。";
+  }
+  if (code.includes("auth/unauthorized-domain") || message.includes("authorized domain")) {
+    return "请把当前站点域名加入 Firebase 授权域名。";
+  }
+  if (code.includes("permission-denied") || message.includes("Missing or insufficient permissions")) {
+    return "请检查 Firestore 安全规则，匿名用户当前没有读写权限。";
+  }
+  if (code.includes("unavailable") || message.includes("offline")) {
+    return "当前网络不可用，暂时无法连接 Firebase。";
+  }
+  return "请检查 firebase-config.js、匿名登录和 Firestore 配置是否完整。";
+}
+
+function clearFirebaseRoomBindings() {
+  if (firebaseRuntime.roomUnsubscribe) {
+    firebaseRuntime.roomUnsubscribe();
+    firebaseRuntime.roomUnsubscribe = null;
+  }
+  if (firebaseRuntime.membersUnsubscribe) {
+    firebaseRuntime.membersUnsubscribe();
+    firebaseRuntime.membersUnsubscribe = null;
+  }
+  firebaseRuntime.roomRef = null;
+  firebaseRuntime.membersRef = null;
+  firebaseRuntime.roomCode = "";
+  firebaseRuntime.connected = false;
+}
+
+function cleanupFirebaseRoomSession(options = {}) {
+  const { deletePresence = false, roomCode = firebaseRuntime.roomCode || state.room.code } = options;
+  const memberId = state.session.memberId;
+  const db = firebaseRuntime.db;
+  const collectionName = getFirebaseCollectionName();
+  const presenceRef = deletePresence && db && roomCode ? db.collection(collectionName).doc(roomCode).collection("members").doc(memberId) : null;
+
+  clearFirebaseRoomBindings();
+  firebaseRuntime.joinToken = generateId("room-leave");
+
+  if (presenceRef) {
+    presenceRef.delete().catch(() => {});
+  }
+}
+
+function handleFirebaseRoomSnapshot(snapshot) {
+  if (!state.session.joined || !state.room.code || !snapshot.exists) {
+    return;
+  }
+
+  const data = snapshot.data() || {};
+  const shared = data.shared || null;
+  const nextHash = shared ? JSON.stringify(shared) : "";
+
+  state.room.lastUpdatedAt = data.updatedAt || Date.now();
+  if (nextHash && nextHash !== state.room.lastSharedHash) {
+    applySharedState(shared);
+    state.room.lastSharedHash = nextHash;
+  }
+
+  renderApp();
+}
+
+function handleFirebaseMembersSnapshot(snapshot) {
+  if (!state.session.joined || !state.room.code) {
+    return;
+  }
+
+  const nextMembers = pruneRoomMembers(snapshot.docs.map((doc) => doc.data() || {})).sort(
+    (left, right) => left.joinedAt - right.joinedAt,
+  );
+  state.room.members = nextMembers;
+  renderApp();
+}
+
+async function writeFirebasePresence() {
+  if (!isFirebaseRoomActive() || !firebaseRuntime.membersRef) {
+    return;
+  }
+
+  await firebaseRuntime.membersRef.doc(state.session.memberId).set(getCurrentMemberPresence(), { merge: true });
+}
+
+async function syncFirebaseSharedState(options = {}) {
+  if (!isFirebaseRoomActive() || !firebaseRuntime.roomRef) {
+    return;
+  }
+
+  const { force = false, preserveShared = false } = options;
+
+  if (preserveShared) {
+    await writeFirebasePresence();
+    return;
+  }
+
+  const shared = serializeSharedState();
+  const sharedHash = JSON.stringify(shared);
+  if (!force && sharedHash === state.room.lastSharedHash) {
+    return;
+  }
+
+  const updatedAt = Date.now();
+  await firebaseRuntime.roomRef.set(
+    {
+      code: state.room.code,
+      ownerId: state.session.memberId,
+      syncMode: "Firebase 实时房间",
+      updatedAt,
+      shared,
+    },
+    { merge: true },
+  );
+
+  state.room.lastUpdatedAt = updatedAt;
+  state.room.lastSharedHash = sharedHash;
+}
+
+async function connectFirebaseRoom(options = {}) {
+  const { restoreShared = true } = options;
+  if (!hasFirebaseConfig() || !state.session.joined || !state.room.code) {
+    return false;
+  }
+
+  const joinToken = generateId("room-join");
+  const roomCode = state.room.code;
+  firebaseRuntime.joinToken = joinToken;
+  state.room.connectionState = "connecting";
+  state.room.syncMode = "Firebase 实时房间连接中";
+  state.room.remoteError = "";
+  renderApp();
+
+  try {
+    await ensureFirebaseServices();
+    if (firebaseRuntime.joinToken !== joinToken || !state.session.joined || state.room.code !== roomCode) {
+      return false;
+    }
+
+    const roomRef = firebaseRuntime.db.collection(getFirebaseCollectionName()).doc(roomCode);
+    const membersRef = roomRef.collection("members");
+    const roomSnapshot = await roomRef.get();
+
+    if (firebaseRuntime.joinToken !== joinToken || !state.session.joined || state.room.code !== roomCode) {
+      return false;
+    }
+
+    clearFirebaseRoomBindings();
+    firebaseRuntime.roomRef = roomRef;
+    firebaseRuntime.membersRef = membersRef;
+    firebaseRuntime.roomCode = roomCode;
+    firebaseRuntime.connected = true;
+
+    if (restoreShared && roomSnapshot.exists && roomSnapshot.data()?.shared) {
+      const remoteShared = roomSnapshot.data().shared;
+      const remoteHash = JSON.stringify(remoteShared);
+      if (remoteHash && remoteHash !== state.room.lastSharedHash) {
+        applySharedState(remoteShared);
+        state.room.lastSharedHash = remoteHash;
+      }
+      state.room.lastUpdatedAt = roomSnapshot.data()?.updatedAt || Date.now();
+    } else if (!roomSnapshot.exists) {
+      const initialShared = serializeSharedState();
+      const updatedAt = Date.now();
+      await roomRef.set(
+        {
+          code: roomCode,
+          ownerId: state.session.memberId,
+          syncMode: "Firebase 实时房间",
+          updatedAt,
+          shared: initialShared,
+        },
+        { merge: true },
+      );
+      state.room.lastUpdatedAt = updatedAt;
+      state.room.lastSharedHash = JSON.stringify(initialShared);
+    }
+
+    firebaseRuntime.roomUnsubscribe = roomRef.onSnapshot(
+      (snapshot) => handleFirebaseRoomSnapshot(snapshot),
+      (error) => {
+        state.room.connectionState = "error";
+        state.room.syncMode = "浏览器本地房间";
+        state.room.remoteError = formatFirebaseError(error);
+        cleanupFirebaseRoomSession();
+        renderApp();
+      },
+    );
+
+    firebaseRuntime.membersUnsubscribe = membersRef.onSnapshot(
+      (snapshot) => handleFirebaseMembersSnapshot(snapshot),
+      (error) => {
+        state.room.connectionState = "error";
+        state.room.syncMode = "浏览器本地房间";
+        state.room.remoteError = formatFirebaseError(error);
+        cleanupFirebaseRoomSession();
+        renderApp();
+      },
+    );
+
+    state.room.connectionState = "connected";
+    state.room.syncMode = "Firebase 实时房间";
+    await writeFirebasePresence();
+    state.room.members = upsertRoomMember(state.room.members, getCurrentMemberPresence());
+    state.roomNotice = `已进入房间 ${roomCode}，当前为 Firebase 实时同步模式。`;
+    renderApp();
+    return true;
+  } catch (error) {
+    state.room.connectionState = "error";
+    state.room.syncMode = "浏览器本地房间";
+    state.room.remoteError = formatFirebaseError(error);
+    state.roomNotice = `已进入房间 ${roomCode}，但云同步未接通，已自动切回本地房间。${state.room.remoteError}`;
+    cleanupFirebaseRoomSession();
+    renderApp();
+    return false;
+  }
+}
+
 function getCurrentRoomSnapshot() {
   if (!state.room.code) {
     return null;
@@ -855,6 +1256,9 @@ function attachToRoom(nickname, roomCode, options = {}) {
   state.room.members = [];
   state.room.lastSharedHash = "";
   state.room.lastUpdatedAt = 0;
+  state.room.connectionState = hasFirebaseConfig() ? "connecting" : "local";
+  state.room.syncMode = hasFirebaseConfig() ? "Firebase 实时房间连接中" : "浏览器本地房间";
+  state.room.remoteError = "";
 
   const currentSnapshot = loadStorage(getRoomStorageKey(normalizedCode), null);
   const snapshot = currentSnapshot || createDefaultRoomSnapshot(normalizedCode);
@@ -880,13 +1284,19 @@ function attachToRoom(nickname, roomCode, options = {}) {
   state.room.lastSharedHash = JSON.stringify(nextSnapshot.shared);
   state.roomDraft.nickname = normalizedNickname;
   state.roomDraft.roomCode = normalizedCode;
-  state.roomNotice = silent ? "" : `已进入房间 ${normalizedCode}。`;
+  state.roomNotice = silent ? "" : `已进入房间 ${normalizedCode}。${hasFirebaseConfig() ? "正在连接实时同步…" : "当前为浏览器本地房间模式。"}`;
 
   replaceRoomUrl(normalizedCode);
   startRoomHeartbeat();
+
+  if (hasFirebaseConfig()) {
+    connectFirebaseRoom({ restoreShared });
+  }
 }
 
 function leaveRoom() {
+  cleanupFirebaseRoomSession({ deletePresence: true, roomCode: state.room.code });
+
   if (state.session.joined && state.room.code) {
     const snapshot = getCurrentRoomSnapshot() || createDefaultRoomSnapshot(state.room.code);
     const nextMembers = pruneRoomMembers(snapshot.members).filter((member) => member.id !== state.session.memberId);
@@ -937,7 +1347,7 @@ function queueRoomSync(options = {}) {
   }, 0);
 }
 
-function syncRoomSnapshot(options = {}) {
+function syncLocalRoomSnapshot(options = {}) {
   if (!state.session.joined || !state.room.code) {
     return;
   }
@@ -970,8 +1380,26 @@ function syncRoomSnapshot(options = {}) {
   state.room.lastSharedHash = sharedHash;
 }
 
+function syncRoomSnapshot(options = {}) {
+  if (!state.session.joined || !state.room.code) {
+    return;
+  }
+
+  if (isFirebaseRoomActive()) {
+    syncFirebaseSharedState(options).catch(() => {});
+    syncLocalRoomSnapshot(options);
+    return;
+  }
+
+  syncLocalRoomSnapshot(options);
+}
+
 function handleStorageSync(event) {
   if (!state.session.joined || !state.room.code) {
+    return;
+  }
+
+  if (isFirebaseRoomActive()) {
     return;
   }
 
@@ -1007,6 +1435,8 @@ function handleBeforeUnload() {
   if (!state.session.joined || !state.room.code) {
     return;
   }
+
+  cleanupFirebaseRoomSession({ deletePresence: true, roomCode: state.room.code });
 
   const snapshot = getCurrentRoomSnapshot();
   if (!snapshot) {
@@ -1952,14 +2382,10 @@ function renderTopbar(currentView) {
   return `
     <header class="topbar glass-card">
       <div>
-        <p class="eyebrow">${state.session.joined ? "昵称入场 · 房间模式已启用" : "朋友聚会现场可直接开玩"}</p>
+        <p class="eyebrow">${state.session.joined ? "昵称登录 · 房间模式已启用" : "朋友聚会现场可直接开玩"}</p>
         <h1>聚会小游戏酒馆</h1>
         <p class="subtitle">
-          ${
-            state.session.joined
-              ? `当前房间 ${escapeHtml(state.room.code)} 正在使用浏览器本地房间模式，同浏览器标签页可以同步内容。`
-              : "先输入昵称并创建或加入房间，再一起进入同一个游戏大厅。"
-          }
+          ${escapeHtml(getJoinedRoomSubtitle())}
         </p>
       </div>
       <div class="topbar-actions">
@@ -2011,14 +2437,14 @@ function renderLobbyView() {
             <div>
               <h2>先进入一个房间，再把今晚的游戏局开起来。</h2>
               <p class="section-subtitle">
-                这版先采用纯前端的本地房间模式：题库和规则都写在文件里，不需要数据库就能跑；后续接 Firebase 或 Supabase 时，可以升级成真正跨设备同步。
+                ${getLobbyModeDescription()}
               </p>
             </div>
             <div class="hero-metrics">
               <span class="metric-pill"><strong>${TRUTH_BANK.length}</strong> 条真心话</span>
               <span class="metric-pill"><strong>${DARE_BANK.length}</strong> 条大冒险</span>
               <span class="metric-pill"><strong>6</strong> 种纸牌玩法</span>
-              <span class="metric-pill"><strong>0</strong> 后端依赖也能先跑</span>
+              <span class="metric-pill"><strong>${hasFirebaseConfig() ? "实时" : "本地"}</strong> 房间模式</span>
             </div>
           </div>
         </article>
@@ -2026,8 +2452,8 @@ function renderLobbyView() {
         <article class="section-card glass-card">
           <div class="panel-header">
             <div>
-              <h2 class="section-title">昵称进入房间</h2>
-              <p>创建房间会自动生成 6 位房间号；加入房间时输入房间号即可。</p>
+              <h2 class="section-title">昵称登录进入房间</h2>
+              <p>创建房间会自动生成 6 位房间号；加入房间时输入房间号即可。若已配置 Firebase，将自动启用跨设备同步。</p>
             </div>
           </div>
           <form id="room-form" class="room-form-grid">
@@ -2062,7 +2488,7 @@ function renderLobbyView() {
           <div class="panel-header">
             <div>
               <h3 class="section-title">当前版本怎么理解</h3>
-              <p>先把“房间感”和新增玩法搭起来，后面再接真同步。</p>
+              <p>${hasFirebaseConfig() ? "这版已经接好了 Firebase 实时房间入口，题库和玩法仍然保持纯前端结构。" : "这版先把房间感和玩法搭起来，再通过配置文件升级成真同步。"}</p>
             </div>
           </div>
           <div class="status-grid">
@@ -2076,11 +2502,12 @@ function renderLobbyView() {
             </article>
             <article>
               <h4>真跨设备同步</h4>
-              <p>后续接 Firebase 或 Supabase 时，直接复用当前房间状态模型即可。</p>
+              <p>${hasFirebaseConfig() ? "当前版本已经会尝试连接 Firebase；只要配置正确，就能跨手机和电脑同步。"
+                : "项目里已预留 Firebase 接口；把配置填进 firebase-config.js 后，就能跨手机和电脑同步。"}</p>
             </article>
             <article>
-              <h4>新增牌类</h4>
-              <p>已准备把德州扑克和大姐牌一起放进纸牌中心。</p>
+              <h4>数据库状态</h4>
+              <p>${getDatabaseStatusText()}</p>
             </article>
           </div>
         </article>
@@ -2136,7 +2563,7 @@ function renderHomeView() {
           <div class="panel-header">
             <div>
               <h3 class="section-title">房间状态</h3>
-              <p>当前用的是纯前端房间模式，适合先把产品感和流程跑起来。</p>
+              <p>${getRoomSyncEngineText()}</p>
             </div>
           </div>
           <div class="status-grid">
@@ -2154,9 +2581,14 @@ function renderHomeView() {
             </article>
             <article>
               <h4>数据库</h4>
-              <p>当前无需数据库，后续接入后即可升级为跨设备实时房间。</p>
+              <p>${escapeHtml(getDatabaseStatusText())}</p>
             </article>
           </div>
+          ${
+            state.room.remoteError
+              ? `<p class="footer-note">云同步提示：${escapeHtml(state.room.remoteError)}</p>`
+              : '<p class="footer-note">如果你准备开启真跨设备房间，请按项目里的 FIREBASE_SETUP.md 填写 Firebase 配置。</p>'
+          }
         </article>
       </div>
       <aside class="aside-stack">
