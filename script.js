@@ -834,6 +834,15 @@ function loadExternalScript(src) {
   return promise;
 }
 
+function getFirebaseScriptUrls() {
+  const localBaseUrl = `./vendor/firebase/${FIREBASE_SDK_VERSION}`;
+  return [
+    `${localBaseUrl}/firebase-app-compat.js`,
+    `${localBaseUrl}/firebase-auth-compat.js`,
+    `${localBaseUrl}/firebase-firestore-compat.js`,
+  ];
+}
+
 async function ensureFirebaseServices() {
   if (!hasFirebaseConfig()) {
     return null;
@@ -844,10 +853,10 @@ async function ensureFirebaseServices() {
   }
 
   firebaseRuntime.initPromise = (async () => {
-    const baseUrl = `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}`;
-    await loadExternalScript(`${baseUrl}/firebase-app-compat.js`);
-    await loadExternalScript(`${baseUrl}/firebase-auth-compat.js`);
-    await loadExternalScript(`${baseUrl}/firebase-firestore-compat.js`);
+    const scriptUrls = getFirebaseScriptUrls();
+    for (const scriptUrl of scriptUrls) {
+      await loadExternalScript(scriptUrl);
+    }
 
     if (!window.firebase) {
       throw new Error("Firebase SDK 未正确加载。");
@@ -904,6 +913,9 @@ function formatFirebaseError(error) {
 
   if (window.location.protocol === "file:") {
     return "请通过 GitHub Pages 或本地静态服务器访问，file:// 环境无法完成 Firebase 匿名登录。";
+  }
+  if (message.includes("无法加载外部脚本")) {
+    return "Firebase 运行库加载失败，当前网络可能拦截了外部脚本。现在项目已改成本地 SDK，刷新后若仍失败请清空浏览器缓存再试。";
   }
   if (code.includes("auth/operation-not-allowed")) {
     return "请在 Firebase 控制台开启匿名登录。";
