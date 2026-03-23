@@ -17,7 +17,8 @@ const VIEW_TITLES = {
   players: "自定义玩家设置",
 };
 
-const LEVELS = ["全部", "轻松", "搞笑", "微刺激"];
+const TRUTH_LEVELS = ["全部", "轻松", "搞笑", "微刺激"];
+const DARE_LEVELS = [...TRUTH_LEVELS, "有点刺激"];
 const DEFAULT_PLAYER_COUNT = 4;
 const ROOM_MEMBER_TTL = 35000;
 const ROOM_HEARTBEAT_MS = 12000;
@@ -37,7 +38,7 @@ const HOME_MODULES = [
     route: "dare",
     badge: "冒",
     title: "大冒险",
-    description: "现场能立刻执行的任务卡，氛围热起来但不过火。",
+    description: "现场能立刻执行的任务卡，支持轻松到有点刺激四档筛选。",
     buttonText: "开始大冒险",
   },
   {
@@ -211,6 +212,42 @@ const DARE_SOURCE = {
     "说出一个你最近偷偷在努力的方向。",
     "让全场帮你选一个表情，你保持 5 秒。",
   ],
+  有点刺激: [
+    "选一人，经对方同意后，用鼻尖轻轻蹭一下对方耳侧，坚持 5 秒。",
+    "邀请离你最近的人用手指轻轻点你的唇珠两下，你不能躲。",
+    "选一个人，额头贴额头，闭眼对视 10 秒，谁先笑谁输。",
+    "对着一位你想夸的人，深吸一口气然后说：“你身上的味道挺好闻的。”",
+    "让在场一人帮你整理衣领或头发，过程中不能笑。",
+    "与指定的人肩膀紧靠肩膀，坐得尽量近一点，坚持 30 秒。",
+    "用非常委屈的语气对一个人说：“你怎么才理我，我都等好久了。”",
+    "选一人，经对方同意后做一个壁咚姿势，手撑在对方旁边，低头看对方 10 秒。",
+    "让别人只用嘴型对你说一句话，不能出声，你来猜是什么。",
+    "轻轻捏住离你最近那个人的脸颊，说：“别装了，我知道你想我。”",
+    "对视在场一个人，突然凑近到只剩一点点距离，然后迅速躲开。",
+    "用夹子音或撒娇音对一个人说：“你好坏呀。”",
+    "让在场任意一个人指挥你做两个互动动作，如摸头或牵手，你必须照做。",
+    "假装喝醉，摇摇晃晃地黏着一个人，索要一个拥抱。",
+    "经对方同意后，和一位朋友十指轻扣 5 秒，再同时松开。",
+    "对指定的人伸出手说：“来，陪我演一下偶像剧。”然后完成一个 5 秒牵手镜头。",
+    "让一位朋友用手指在你掌心写一个字，你闭眼猜。",
+    "对一个人认真说：“你今天有点犯规，好看得太明显了。”",
+    "和一位朋友背靠背坐 15 秒，期间都不能回头。",
+    "走到一位朋友面前，慢慢帮对方整理一下想象中的碎发，动作要轻。",
+    "对一位朋友用低声旁白介绍：“这位，就是今晚让我有点分神的人。”",
+    "与指定的人手背贴手背，坚持 10 秒，期间谁都不能说话。",
+    "让一位朋友替你选一句暧昧台词，你看着他或她念出来。",
+    "对一个人假装吃醋地说：“你刚刚怎么不先跟我碰杯？”",
+    "和一位朋友一起做一个借位‘差点亲上’的合照姿势，保持 3 秒。",
+    "对指定的人勾一下手指，说：“今晚先别跑。”",
+    "让一位朋友替你把外套或衣角整理一下，你全程只能看着对方，不准笑。",
+    "对着一位朋友用懒洋洋的语气说：“你坐过来一点，我听不清。”",
+    "与一位朋友同看一个方向，肩膀贴住肩膀，直到全场数到五。",
+    "站到一位朋友身后半步远，轻声说一句：“你别紧张，我又不凶。”",
+    "经对方同意后，和一位朋友额头轻碰一下，然后各退一步，同时说“收工”。",
+    "对一位朋友说：“如果今晚要拍合照，你必须站我旁边。”",
+    "让一位朋友帮你选择‘摸头’或‘捏脸’，你必须接受其中一个。",
+    "对指定的人伸出小拇指勾住 5 秒，并说：“这轮先跟我站一边。”",
+  ],
 };
 
 const REWARD_BANK = [
@@ -247,6 +284,7 @@ const ATMOSPHERE_TIPS = [
   "轮流发言会让每个人都更有参与感，别急着抢答。",
   "任务和惩罚都可以适度调整，现场舒服最重要。",
   "如果有人不想做某项任务，可以改成喝一小口或换题。",
+  "涉及靠近或身体接触的任务，先确认对方也愿意，再玩会更自在。",
   "尽量给每位朋友都留到出场机会，气氛会更顺。",
   "保持节奏很重要，卡住时就直接点“下一题”继续。",
   "文明玩笑比用力起哄更高级，大家都会更放松。",
@@ -2819,7 +2857,7 @@ function renderPromptView(gameKey) {
   const title = isTruth ? "真心话" : "大冒险";
   const subtitle = isTruth
     ? "抽一位玩家，再从不同强度的真心话题库中随机发题。"
-    : "抽一位玩家，给出可以现场马上执行的轻量任务。";
+    : "抽一位玩家，给出可以现场马上执行的轻量任务；新增“有点刺激”档。";
   const session = getPromptSession(gameKey);
   const bank = getPromptBank(gameKey);
   const summary = getBankSummary(bank, session.level, session.usedIds);
@@ -2838,6 +2876,12 @@ function renderPromptView(gameKey) {
           <div class="filter-row">
             ${renderLevelButtons(session.level, gameKey)}
           </div>
+
+          ${
+            isTruth
+              ? ""
+              : '<p class="footer-note" style="margin-top: 12px;">“有点刺激”档偏近距离互动，默认以双方自愿、现场舒服为先；不想做就直接换题也完全没问题。</p>'
+          }
 
           ${
             session.currentItem
@@ -3583,7 +3627,7 @@ function renderTipCard() {
 }
 
 function renderLevelButtons(activeLevel, gameKey) {
-  return LEVELS.map(
+  return getLevelsForGame(gameKey).map(
     (level) => `
       <button
         type="button"
@@ -3596,6 +3640,13 @@ function renderLevelButtons(activeLevel, gameKey) {
       </button>
     `,
   ).join("");
+}
+
+function getLevelsForGame(gameKey) {
+  if (gameKey === "dare") {
+    return DARE_LEVELS;
+  }
+  return TRUTH_LEVELS;
 }
 
 function getLevelClassName(level) {
