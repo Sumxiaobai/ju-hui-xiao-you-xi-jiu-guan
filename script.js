@@ -834,6 +834,10 @@ function formatCountdown(ms) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+function isPenaltyBombUrgent() {
+  return state.penaltyBomb.running && !state.penaltyBomb.modal && getPenaltyCountdownMs() <= 10000;
+}
+
 function getPenaltyCountdownMs() {
   if (!state.penaltyBomb.running || !state.penaltyBomb.nextTriggerAt || state.penaltyBomb.modal) {
     return state.penaltyBomb.intervalMs;
@@ -845,6 +849,7 @@ function updatePenaltyCountdownUi() {
   const countdownText = formatCountdown(getPenaltyCountdownMs());
   document.querySelectorAll("[data-penalty-countdown]").forEach((node) => {
     node.textContent = countdownText;
+    node.dataset.state = isPenaltyBombUrgent() ? "urgent" : "normal";
   });
 }
 
@@ -924,7 +929,7 @@ function openPenaltyBombModal() {
   state.penaltyBomb.nextTriggerAt = 0;
   state.penaltyBomb.history = [state.penaltyBomb.modal, ...state.penaltyBomb.history].slice(0, 5);
   savePenaltyBombState();
-  playUiTone("success");
+  playUiTone("alert");
   renderApp();
 }
 
@@ -3949,6 +3954,7 @@ function renderBonusCard() {
   }
 
   const currentPlayer = getPenaltyTurnPlayer();
+  const urgent = isPenaltyBombUrgent();
   return `
     <article class="side-card glass-card">
       <div class="toggle-row">
@@ -3958,14 +3964,18 @@ function renderBonusCard() {
         </div>
         <button type="button" class="ghost-btn" data-action="toggle-bonus">收起</button>
       </div>
+      <div class="penalty-status-banner ${urgent ? "is-urgent" : ""}" style="margin-top: 14px;">
+        <strong>${urgent ? "即将触发" : "正在巡航"}</strong>
+        <span>${urgent ? "10 秒内会弹出惩罚窗口" : "时间到了会自动弹窗点名"}</span>
+      </div>
       <div class="status-grid" style="margin-top: 14px;">
         <article>
           <h4>当前轮到</h4>
-          <p>${escapeHtml(currentPlayer)}</p>
+          <p><span class="spotlight-name penalty-player-pill">${escapeHtml(currentPlayer)}</span></p>
         </article>
         <article>
           <h4>倒计时</h4>
-          <p data-penalty-countdown>${formatCountdown(getPenaltyCountdownMs())}</p>
+          <p class="penalty-countdown" data-penalty-countdown data-state="${urgent ? "urgent" : "normal"}">${formatCountdown(getPenaltyCountdownMs())}</p>
         </article>
         <article>
           <h4>强度</h4>
@@ -4043,16 +4053,24 @@ function renderPenaltyBombModal() {
   return `
     <div class="modal-backdrop">
       <article class="penalty-modal glass-card">
-        <div class="chip-row">
-          <span class="small-chip"><strong>惩罚时间到</strong></span>
-          <span class="small-chip">${escapeHtml(task.tag)}</span>
-          <span class="small-chip">${escapeHtml(state.penaltyBomb.intensity)}</span>
+        <div class="penalty-modal-header">
+          <div class="chip-row">
+            <span class="small-chip penalty-badge"><strong>惩罚时间到</strong></span>
+            <span class="small-chip">${escapeHtml(task.tag)}</span>
+            <span class="small-chip">${escapeHtml(state.penaltyBomb.intensity)}</span>
+          </div>
+          <div class="penalty-alarm-bar">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </div>
-        <div class="highlight-box" style="margin-top: 16px;">
+        <div class="highlight-box penalty-player-spotlight" style="margin-top: 16px;">
           <small>当前轮到</small>
           <div style="margin-top: 10px;">
-            <span class="spotlight-name">${escapeHtml(player)}</span>
+            <span class="spotlight-name penalty-player-name">${escapeHtml(player)}</span>
           </div>
+          <p class="footer-note" style="margin-top: 12px;">这一轮由这位玩家先接任务，完成后会自动轮到下一位。</p>
         </div>
         <div class="prompt-card" style="margin-top: 16px;">
           <p class="prompt-text">${escapeHtml(task.text)}</p>
