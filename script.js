@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   players: "party-tavern-players",
   soundEnabled: "party-tavern-sound-enabled",
   showBonus: "party-tavern-show-bonus",
+  penaltyBomb: "party-tavern-penalty-bomb",
   session: "party-tavern-room-session",
 };
 
@@ -280,6 +281,48 @@ const PENALTY_BANK = [
   "模仿自己最困的时候 3 秒钟。",
 ];
 
+const PENALTY_INTERVAL_OPTIONS = [
+  { label: "2 分钟", value: 2 * 60 * 1000 },
+  { label: "3 分钟", value: 3 * 60 * 1000 },
+  { label: "5 分钟", value: 5 * 60 * 1000 },
+];
+
+const PENALTY_MODE_OPTIONS = ["轻量", "混合", "敢玩一点"];
+
+const POPUP_PENALTY_BANK = {
+  轻量: [
+    ...PENALTY_BANK.map((text) => ({ text, tag: "轻量惩罚", note: "适合穿插在聚会流程里，不会太打断节奏。", needsConsent: false })),
+    { text: "从你开始顺时针每人说一个夜宵，谁先卡壳谁喝一小口。", tag: "小游戏", note: "这条适合全桌一起参与。", needsConsent: false },
+    { text: "和任意一位朋友碰杯后，对对方说一句今晚最真诚的夸奖。", tag: "双人互动", note: "更适合现场刚热起来的时候。", needsConsent: false },
+    { text: "立刻给自己取一个限定昵称，维持到下一次惩罚弹窗出现。", tag: "限定效果", note: "越离谱越有记忆点。", needsConsent: false },
+    { text: "你来定一个类别，全桌玩一轮逛三园，输的人喝一小口。", tag: "全桌互动", note: "如果人多，这条会很好带气氛。", needsConsent: false },
+  ],
+  混合: [
+    ...PENALTY_BANK.map((text) => ({ text, tag: "基础惩罚", note: "这条强度适中，适合多数聚会局。", needsConsent: false })),
+    { text: "认真夸在场一位朋友三句，不能重复意思。", tag: "微刺激", note: "夸得越具体，现场越容易起哄。", needsConsent: false },
+    { text: "让在场一位朋友为你起一个今晚限定昵称，你要接受到下一轮。", tag: "微刺激", note: "适合把桌面气氛推起来。", needsConsent: false },
+    { text: "说出今晚在场你最想一起合照的人。", tag: "微刺激", note: "很适合朋友局里制造话题。", needsConsent: false },
+    { text: "请一位朋友替你选“喝一口”或“表演一个庆祝动作”，你执行。", tag: "微刺激", note: "把选择权交出去，会更有戏。", needsConsent: false },
+    { text: "把下一轮发言机会让给别人，并为对方鼓掌。", tag: "轻互动", note: "节奏会更顺，也不会太尴尬。", needsConsent: false },
+    { text: "对任意一人说一句“下次还约”。", tag: "轻互动", note: "简单但很有聚会氛围。", needsConsent: false },
+    { text: "从你开始玩一轮歌词接龙，接不上超过 3 秒的人喝一小口。", tag: "小游戏", note: "人多的时候尤其好玩。", needsConsent: false },
+  ],
+  敢玩一点: [
+    ...PENALTY_BANK.map((text) => ({ text, tag: "基础惩罚", note: "如果不想做进阶项，也可以改成喝一小口。", needsConsent: false })),
+    { text: "和右手边的人对视 3 秒，谁先笑谁举杯。", tag: "微刺激", note: "很适合做成现场起哄点。", needsConsent: false },
+    { text: "认真夸在场一位朋友三句，不能重复意思。", tag: "微刺激", note: "越具体越有效果。", needsConsent: false },
+    { text: "对任意一人说一句“下次还约”。", tag: "微刺激", note: "适合把节奏拉回轻松。", needsConsent: false },
+    { text: "选一个人，额头贴额头，闭眼对视 10 秒，谁先笑谁输。", tag: "有点刺激", note: "涉及近距离互动，先确认对方也愿意。", needsConsent: true },
+    { text: "让在场一人帮你整理衣领或头发，过程中不能笑。", tag: "有点刺激", note: "动作轻一点，舒服最重要。", needsConsent: true },
+    { text: "与指定的人肩膀紧靠肩膀，坐得尽量近一点，坚持 30 秒。", tag: "有点刺激", note: "如果对方不想玩，直接换一条。", needsConsent: true },
+    { text: "用非常委屈的语气对一个人说：“你怎么才理我，我都等好久了。”", tag: "有点刺激", note: "这条更偏台词感，适合爱起哄的局。", needsConsent: false },
+    { text: "对视在场一个人，突然凑近到只剩一点点距离，然后迅速躲开。", tag: "有点刺激", note: "只做气氛，不要真的冒犯别人。", needsConsent: true },
+    { text: "让一位朋友用手指在你掌心写一个字，你闭眼猜。", tag: "有点刺激", note: "很适合朋友局里的默契挑战。", needsConsent: true },
+    { text: "对一个人认真说：“你今天有点犯规，好看得太明显了。”", tag: "有点刺激", note: "这条更像气氛台词卡。", needsConsent: false },
+    { text: "和一位朋友背靠背坐 15 秒，期间都不能回头。", tag: "有点刺激", note: "适合拿来缓和一下节奏。", needsConsent: true },
+  ],
+};
+
 const ATMOSPHERE_TIPS = [
   "轮流发言会让每个人都更有参与感，别急着抢答。",
   "任务和惩罚都可以适度调整，现场舒服最重要。",
@@ -408,27 +451,86 @@ const RANKS = [
   { label: "2", value: 2 },
 ];
 
-const LUCKY_RULES = {
-  A: { title: "A 指定一人", detail: "指定任意一位朋友回答一个轻松问题；如果跳过，就喝一小口。" },
-  K: { title: "K 全体举杯", detail: "全体一起举杯说一句“今晚快乐”，最慢跟上的人喝一口。" },
-  Q: { title: "Q 自我挑战", detail: "你自己选择回答一个真心话，或者直接喝两小口。" },
-  J: { title: "J 左边的人", detail: "左手边的朋友要用一句台词夸今晚气氛，不愿意就喝一口。" },
-  10: { title: "10 小目标", detail: "说出一个最近最想完成的小目标，说完即可过关。" },
-  9: { title: "9 秒快答", detail: "9 秒内说出三种下酒菜或零食，超时喝一口。" },
-  8: { title: "8 碰杯卡", detail: "你要立刻和任意一位朋友碰杯，并互夸一句。" },
-  7: { title: "7 字词挑战", detail: "说出 7 个和聚会相关的词，卡住就喝一口。" },
-  6: { title: "6 秒姿势", detail: "摆一个 6 秒钟的搞笑姿势，让全场给你评分。" },
-  5: { title: "5 指令", detail: "全体同时伸手比 5，最慢的人喝一口。" },
-  4: { title: "4 字形容", detail: "用四个字形容今晚的气氛，不能重复别人说过的。" },
-  3: { title: "3 件开心事", detail: "说出最近让你开心的三件小事，说完直接过关。" },
-  2: { title: "2 人同盟", detail: "指定一位朋友和你一起喊一句今晚口号，然后一起碰杯。" },
+const LUCKY_SUIT_THEMES = {
+  "♥": {
+    title: "红桃互动局",
+    detail: "偏双人互动、夸夸和气氛升温，适合把现场从刚热起来推到更有默契的状态。",
+  },
+  "♠": {
+    title: "黑桃快节奏局",
+    detail: "偏反应、节奏和小口喝酒，适合拿来加速推进一轮，让桌面一下子热起来。",
+  },
+  "♣": {
+    title: "梅花互动小游戏局",
+    detail: "偏接龙、传话、站队和小互动，适合一桌人一起参与，不会只剩一个人单独表演。",
+  },
+  "♦": {
+    title: "方块幸运反转局",
+    detail: "偏免喝、转送和临时改命，抽到之后往往能改写下一轮是谁赚谁亏。",
+  },
 };
 
-const LUCKY_SUIT_HINTS = {
-  "♥": "红桃彩蛋：更偏向真诚互动，执行顺利的话，你可以指定下一位抽牌人。",
-  "♠": "黑桃彩蛋：更偏向快节奏，动作要果断，拖太久容易被现场起哄。",
-  "♣": "梅花彩蛋：更偏向现场任务，做得越投入越有节目效果。",
-  "♦": "方块彩蛋：更偏向好运加成，完成后你可以要求现场给一句夸奖。",
+const LUCKY_CARD_RULES = {
+  "♥": {
+    A: { title: "心动点名", tag: "双人互动", detail: "指定一位朋友，互相说出对方第一眼最加分的一点；谁先卡壳谁喝一小口。" },
+    K: { title: "搭档举杯", tag: "氛围升温", detail: "选一位朋友做本轮搭档，你们一起碰杯并喊一句今晚口号。" },
+    Q: { title: "真诚三连夸", tag: "夸夸卡", detail: "用三种不同表达夸同一个人，不能重复意思。" },
+    J: { title: "默契同答", tag: "默契测试", detail: "和右手边的朋友同时说出一种最想吃的夜宵；一样则全身而退，不一样一起碰杯。" },
+    10: { title: "十秒合影位", tag: "双人站位", detail: "和一位朋友肩并肩站 10 秒，摆出一个“今晚最熟”的合照姿势。" },
+    9: { title: "Stroop 训练", tag: "反应挑战", detail: "主持人连续给你 7 个颜色词卡，比如“蓝”字用白色显示，你要说出看到的颜色而不是念字，5 秒内完成。卡住或说错喝一小口。" },
+    8: { title: "耳语感谢", tag: "低声互动", detail: "靠近一位朋友，用只有对方能听见的音量说一句今晚感谢。" },
+    7: { title: "七秒对视", tag: "心跳局", detail: "和任意一人对视 7 秒，谁先笑谁喝一小口。" },
+    6: { title: "靠背停留", tag: "轻接触", detail: "和一位朋友背靠背站 6 秒，期间不能回头。" },
+    5: { title: "偶像剧定格", tag: "画面卡", detail: "和一位朋友完成一个 5 秒偶像剧定格动作，现场打分。" },
+    4: { title: "四字昵称", tag: "限定称呼", detail: "给任意一位朋友起一个四字限定昵称，对方点头通过才算成功。" },
+    3: { title: "三连感谢", tag: "暖场卡", detail: "对同一个人说出三句不同的感谢，越具体越好。" },
+    2: { title: "双人同盟", tag: "绑定效果", detail: "指定一位朋友成为你的下一轮同盟，下次你被点任务时对方要陪你一起完成。" },
+  },
+  "♠": {
+    A: { title: "王牌发令", tag: "全桌指令", detail: "你喊一个全桌动作口令，最慢跟上的人喝一小口。" },
+    K: { title: "全桌压拍", tag: "节奏喝酒", detail: "全场一起倒数三二一碰杯，没跟上节奏的人喝一小口。" },
+    Q: { title: "快答点名", tag: "快反挑战", detail: "指定一位朋友，在 5 秒内回答你给出的轻松问题。" },
+    J: { title: "左右夹击", tag: "碰杯动作", detail: "你要同时和左右两边的人碰杯，做不到就自己喝一小口。" },
+    10: { title: "固定开场白", tag: "口头规则", detail: "接下来这一轮每次发言前都必须先说“我想说的是”，漏掉的人喝一小口。" },
+    9: { title: "五秒报菜名", tag: "快嘴挑战", detail: "5 秒内说出 3 种下酒菜或零食，超时喝一小口。" },
+    8: { title: "八拍节奏", tag: "全桌互动", detail: "带全场拍 8 下节奏，谁乱拍谁喝。" },
+    7: { title: "七词接龙", tag: "词汇挑战", detail: "说出 7 个和聚会有关的词，卡壳就喝一小口。" },
+    6: { title: "六连口令", tag: "笑场警报", detail: "把“喝酒要适度”连说 6 遍，不能笑场，失败就喝一小口。" },
+    5: { title: "同数淘汰", tag: "手势喝酒", detail: "全桌同时出 1 到 5 的手势，和你一样的人都喝一小口。" },
+    4: { title: "反手整轮", tag: "持续效果", detail: "接下来这一轮每次拿杯都必须用非惯用手完成，忘记就补喝一小口。" },
+    3: { title: "三人碰杯", tag: "组队动作", detail: "立刻凑齐 3 个人一起碰杯并喊“继续继续”。" },
+    2: { title: "二选一", tag: "自选惩罚", detail: "你自己选：回答一个轻松真心话，或者喝两小口。" },
+  },
+  "♣": {
+    A: { title: "你有我没有", tag: "全桌互动", detail: "说一件你做过的小事，做过的人举手；如果没人举手你喝一小口，举手最多的人指定下一位抽牌。" },
+    K: { title: "逛三园", tag: "经典小游戏", detail: "你先定一个类别，例如水果、歌手或城市，从你开始顺时针接，卡壳或重复的人喝一小口。" },
+    Q: { title: "左右站队", tag: "选边小游戏", detail: "你喊一个二选一题目，例如火锅还是烧烤；全场立刻选边，人数较少那边一起碰杯。" },
+    J: { title: "口型传话", tag: "互动传递", detail: "你想一句短话，只用嘴型传给下一位，依次传 3 个人，最后一位大声说出结果。" },
+    10: { title: "艺术生请就位", tag: "身份小游戏", detail: "自认艺术生的人现场表演 10 秒；如果你不认，就喝一小口并指定一位你觉得最有艺术细胞的人补个 5 秒动作。" },
+    9: { title: "数字炸弹", tag: "反应小游戏", detail: "从你开始顺时针报数，逢 3 或含 3 直接拍桌跳过，出错的人喝一小口。" },
+    8: { title: "谁最像", tag: "全桌投票", detail: "你说一个场景，例如“最可能临时改主意的人”，全场同时指一个人，被最多指的人回答轻松问题或喝一小口。" },
+    7: { title: "歌词接龙", tag: "接龙小游戏", detail: "从你开始接一句歌词，接不上、重复或卡住超过 3 秒的人喝一小口。" },
+    6: { title: "六秒同答", tag: "默契测试", detail: "你指定一位朋友，6 秒后你们同时说出一种下酒菜；一样就全身而退，不一样一起碰杯。" },
+    5: { title: "五轮加速", tag: "词汇小游戏", detail: "你定一个类别，从你开始全桌每人快速说一个，连过 5 人不重复就算成功，断掉的人喝一小口。" },
+    4: { title: "反向抢答", tag: "脑筋急转", detail: "你指定一个常见类别，例如颜色或水果，接下来一圈里每个人都要说一个“不是它”的答案，重复或想太久的人喝一小口。" },
+    3: { title: "三人默契", tag: "多人小游戏", detail: "你拉上另外两位朋友，三个人同时说出一个 KTV 必点歌手；三人全不同则你们一起碰杯。" },
+    2: { title: "双人接力", tag: "搭档互动", detail: "指定一位朋友和你组成搭档，轮流说出聚会时会出现的东西，谁先卡壳谁喝一小口。" },
+  },
+  "♦": {
+    A: { title: "免喝金卡", tag: "幸运奖励", detail: "你获得一次免喝权，可以留着，也可以马上送给别人。" },
+    K: { title: "奖惩反弹", tag: "转送卡", detail: "你可以把自己下一次喝酒或任务转送给任意一位朋友。" },
+    Q: { title: "好运交换", tag: "位置变化", detail: "和任意一位朋友交换座位，或者交换今晚限定昵称一轮。" },
+    J: { title: "加码翻倍", tag: "命运改写", detail: "指定一位朋友的下一次喝酒增加一小口，或由你赦免一次。" },
+    10: { title: "成语接龙", tag: "全桌接龙", detail: "从你开始成语接龙，顺时针往下接；接不上、重复或停顿太久的人喝一小口。" },
+    9: { title: "九命护身", tag: "自救卡", detail: "本轮你可以拒绝一次任务，改成举杯说一句祝酒词。" },
+    8: { title: "好运转送", tag: "辅助卡", detail: "指定一位朋友获得下一次免喝权。" },
+    7: { title: "顺风搭车", tag: "陪同效果", detail: "下一位被点到执行任务的人，可以选择让你陪同。" },
+    6: { title: "命运互换", tag: "交换卡", detail: "和任意一位朋友交换下一次被点名的结果。" },
+    5: { title: "五字口号", tag: "控场卡", detail: "喊一句 5 个字的祝酒口号，然后指定下一位抽牌人。" },
+    4: { title: "幸运加码", tag: "再抽一次", detail: "你可以立刻再抽一张，但只执行两张里你更想要的一张。" },
+    3: { title: "三选一", tag: "快速执行", detail: "从“碰杯”“夸人”“喝一小口”里选择一项立刻执行。" },
+    2: { title: "双倍幸运", tag: "共享效果", detail: "指定一位朋友和你一起共享这张牌的效果，内容由你来分配。" },
+  },
 };
 
 const KING_RULES = {
@@ -458,6 +560,7 @@ const state = createInitialState();
 let audioContext = null;
 let roomHeartbeatTimer = null;
 let roomSyncTimer = null;
+let penaltyBombTicker = null;
 const firebaseRuntime = createFirebaseRuntime();
 
 document.addEventListener("click", handleClick);
@@ -469,16 +572,31 @@ window.addEventListener("beforeunload", handleBeforeUnload);
 initializeApp();
 
 function initializeApp() {
+  resetLegacyRoomMode();
   state.bonusResult = getRandomBonusResult();
   primeCardGames();
-
-  if (state.session.joined && state.session.roomCode && state.session.nickname) {
-    attachToRoom(state.session.nickname, state.session.roomCode, { silent: true, restoreShared: true });
-  } else if (state.roomDraft.roomCode) {
-    replaceRoomUrl(state.roomDraft.roomCode);
-  }
-
+  startPenaltyBombTicker();
   renderApp();
+}
+
+function resetLegacyRoomMode() {
+  stopRoomHeartbeat();
+  cleanupFirebaseRoomSession();
+
+  state.session.nickname = "";
+  state.session.roomCode = "";
+  state.session.joinedAt = 0;
+  state.session.joined = false;
+  saveStorage(STORAGE_KEYS.session, state.session);
+
+  state.room = createRoomRuntimeState();
+  state.roomDraft = {
+    nickname: "",
+    roomCode: "",
+  };
+  state.roomNotice = "当前已回退为纯本地版，房间同步入口已关闭。";
+  state.view = state.view === "lobby" ? "home" : state.view;
+  replaceRoomUrl("");
 }
 
 function createInitialState() {
@@ -497,6 +615,7 @@ function createInitialState() {
     soundEnabled: loadStorage(STORAGE_KEYS.soundEnabled, false),
     showBonus: loadStorage(STORAGE_KEYS.showBonus, true),
     bonusResult: null,
+    penaltyBomb: createPenaltyBombState(),
     tipIndex: Math.floor(Math.random() * ATMOSPHERE_TIPS.length),
     truth: createPromptSession(),
     dare: createPromptSession(),
@@ -524,7 +643,7 @@ function createRoomRuntimeState() {
     members: [],
     lastUpdatedAt: 0,
     lastSharedHash: "",
-    connectionState: hasFirebaseConfig() ? "idle" : "local",
+    connectionState: "local",
     remoteError: "",
   };
 }
@@ -564,7 +683,7 @@ function createFirebaseRuntime() {
 }
 
 function getDefaultRoomSyncMode() {
-  return hasFirebaseConfig() ? "Firebase 实时房间待连接" : "浏览器本地房间";
+  return "纯前端本地模式";
 }
 
 function isFirebaseRoomActive() {
@@ -576,57 +695,19 @@ function isFirebaseGuestMode() {
 }
 
 function getRoomSyncEngineText() {
-  if (isFirebaseRoomActive()) {
-    return isFirebaseGuestMode() ? "Firebase 实时同步（游客模式）" : "Firebase 匿名登录 + Firestore 实时同步";
-  }
-  if (hasFirebaseConfig() && state.room.connectionState === "connecting") {
-    return "正在建立 Firebase 实时连接";
-  }
-  if (hasFirebaseConfig() && state.room.connectionState === "error") {
-    return "Firebase 连接失败，已自动降级到本地房间";
-  }
-  return "浏览器本地房间（无后端）";
+  return "纯前端本地模式（已移除跨设备房间同步）";
 }
 
 function getJoinedRoomSubtitle() {
-  if (!state.session.joined) {
-    return "先输入昵称登录并创建或加入房间，再一起进入同一个游戏大厅。";
-  }
-
-  if (isFirebaseRoomActive()) {
-    return isFirebaseGuestMode()
-      ? `当前房间 ${state.room.code} 已接入 Firebase 实时同步，不同手机或电脑进入同一房间后会共享内容。当前使用的是轻量游客模式。`
-      : `当前房间 ${state.room.code} 已接入 Firebase 实时同步，不同手机或电脑进入同一房间后会共享内容。`;
-  }
-
-  if (hasFirebaseConfig() && state.room.connectionState === "connecting") {
-    return `当前房间 ${state.room.code} 正在连接 Firebase 实时房间，连接完成后会自动切换成跨设备同步。`;
-  }
-
-  if (hasFirebaseConfig() && state.room.connectionState === "error") {
-    return `当前房间 ${state.room.code} 已回退到浏览器本地房间模式。${state.room.remoteError || "请检查 Firebase 配置与权限。"}`;
-  }
-
-  return `当前房间 ${state.room.code} 正在使用浏览器本地房间模式，同浏览器标签页可以同步内容。`;
+  return "当前是纯前端本地版：打开网页就能玩，玩家名单和游戏进度保存在当前浏览器。";
 }
 
 function getLobbyModeDescription() {
-  if (hasFirebaseConfig()) {
-    return "已检测到 Firebase 配置：进入房间后会用匿名身份登录，并通过 Firestore 在不同设备之间实时同步。题库和规则仍然全部写在前端文件里。";
-  }
-  return "当前默认是纯前端本地房间模式：题库和规则都写在文件里，不需要数据库就能跑；按项目里的 FIREBASE_SETUP.md 填入配置后，就能升级成真正跨设备同步。";
+  return "当前已经回退为纯前端本地版：题库和规则都写在文件里，打开网页就能玩，不再依赖 Firebase 或房间同步。";
 }
 
 function getDatabaseStatusText() {
-  if (isFirebaseRoomActive() || (hasFirebaseConfig() && state.room.connectionState === "connecting")) {
-    return isFirebaseGuestMode()
-      ? "已接入 Firestore，用于保存房间共享状态与成员在线信息；当前使用游客模式，不依赖 Firebase Authentication。"
-      : "已接入 Firestore，用于保存房间共享状态与成员在线信息。";
-  }
-  if (hasFirebaseConfig() && state.room.connectionState === "error") {
-    return "Firebase 已配置，但当前连接失败；请检查授权域名、匿名登录和 Firestore 规则。";
-  }
-  return "当前未接数据库，仍可本地玩；按项目里的 FIREBASE_SETUP.md 配置后即可升级成跨设备同步。";
+  return "未接数据库，当前所有玩家名单和游戏状态只保存在本地浏览器。";
 }
 
 function createPromptSession() {
@@ -651,6 +732,19 @@ function createComboSession() {
   };
 }
 
+function createPenaltyBombState() {
+  const saved = loadStorage(STORAGE_KEYS.penaltyBomb, null);
+  return {
+    running: Boolean(saved?.running),
+    intervalMs: PENALTY_INTERVAL_OPTIONS.some((item) => item.value === saved?.intervalMs) ? saved.intervalMs : 3 * 60 * 1000,
+    intensity: PENALTY_MODE_OPTIONS.includes(saved?.intensity) ? saved.intensity : "混合",
+    turnIndex: Number.isInteger(saved?.turnIndex) ? Math.max(saved.turnIndex, 0) : 0,
+    nextTriggerAt: saved?.running && Number.isFinite(saved?.nextTriggerAt) ? saved.nextTriggerAt : 0,
+    modal: null,
+    history: Array.isArray(saved?.history) ? saved.history.slice(0, 5) : [],
+  };
+}
+
 function createCardCenterState() {
   return {
     activeTab: "lucky",
@@ -658,6 +752,7 @@ function createCardCenterState() {
       deck: shuffleArray(createDeck()),
       currentCard: null,
       currentRule: null,
+      showRules: false,
     },
     highLow: createHighLowGame(),
     roulette: {
@@ -699,7 +794,7 @@ function createHoldemGame(previous = {}) {
     communityCards: [],
     players: [],
     showdown: null,
-    feedback: "点击“发新一局”，系统会按当前房间玩家发底牌。为了适合聚会使用，默认是公开主持模式。",
+    feedback: "点击“发新一局”，系统会按当前玩家名单发底牌。为了适合聚会使用，默认是公开主持模式。",
   };
 }
 
@@ -714,6 +809,164 @@ function createBigSisterGame() {
     activeEffects: [],
     showRules: false,
   };
+}
+
+function savePenaltyBombState() {
+  saveStorage(STORAGE_KEYS.penaltyBomb, {
+    running: state.penaltyBomb.running,
+    intervalMs: state.penaltyBomb.intervalMs,
+    intensity: state.penaltyBomb.intensity,
+    turnIndex: state.penaltyBomb.turnIndex,
+    nextTriggerAt: state.penaltyBomb.nextTriggerAt,
+    history: state.penaltyBomb.history.slice(0, 5),
+  });
+}
+
+function getPenaltyTurnPlayer() {
+  const players = getEffectivePlayers();
+  return players[state.penaltyBomb.turnIndex % players.length] || players[0] || "玩家1";
+}
+
+function formatCountdown(ms) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function getPenaltyCountdownMs() {
+  if (!state.penaltyBomb.running || !state.penaltyBomb.nextTriggerAt || state.penaltyBomb.modal) {
+    return state.penaltyBomb.intervalMs;
+  }
+  return Math.max(0, state.penaltyBomb.nextTriggerAt - Date.now());
+}
+
+function updatePenaltyCountdownUi() {
+  const countdownText = formatCountdown(getPenaltyCountdownMs());
+  document.querySelectorAll("[data-penalty-countdown]").forEach((node) => {
+    node.textContent = countdownText;
+  });
+}
+
+function startPenaltyBombTicker() {
+  if (penaltyBombTicker) {
+    clearInterval(penaltyBombTicker);
+  }
+
+  penaltyBombTicker = window.setInterval(() => {
+    if (state.penaltyBomb.running && !state.penaltyBomb.modal && state.penaltyBomb.nextTriggerAt && Date.now() >= state.penaltyBomb.nextTriggerAt) {
+      openPenaltyBombModal();
+      return;
+    }
+    updatePenaltyCountdownUi();
+  }, 1000);
+}
+
+function schedulePenaltyBomb() {
+  state.penaltyBomb.nextTriggerAt = Date.now() + state.penaltyBomb.intervalMs;
+  savePenaltyBombState();
+  updatePenaltyCountdownUi();
+}
+
+function startPenaltyBomb() {
+  state.penaltyBomb.running = true;
+  schedulePenaltyBomb();
+  renderApp();
+}
+
+function pausePenaltyBomb() {
+  state.penaltyBomb.running = false;
+  state.penaltyBomb.nextTriggerAt = 0;
+  savePenaltyBombState();
+  renderApp();
+}
+
+function setPenaltyBombInterval(intervalMs) {
+  state.penaltyBomb.intervalMs = intervalMs;
+  if (state.penaltyBomb.running && !state.penaltyBomb.modal) {
+    schedulePenaltyBomb();
+  } else {
+    savePenaltyBombState();
+  }
+  renderApp();
+}
+
+function setPenaltyBombIntensity(intensity) {
+  state.penaltyBomb.intensity = intensity;
+  savePenaltyBombState();
+  renderApp();
+}
+
+function advancePenaltyBombTurn(options = {}) {
+  const { render = true } = options;
+  const players = getEffectivePlayers();
+  state.penaltyBomb.turnIndex = players.length ? (state.penaltyBomb.turnIndex + 1) % players.length : 0;
+  savePenaltyBombState();
+  if (render) {
+    renderApp();
+  }
+}
+
+function getPopupPenaltyPool() {
+  return POPUP_PENALTY_BANK[state.penaltyBomb.intensity] || POPUP_PENALTY_BANK["混合"];
+}
+
+function pickPenaltyBombTask() {
+  return pickRandom(getPopupPenaltyPool());
+}
+
+function openPenaltyBombModal() {
+  state.penaltyBomb.modal = {
+    player: getPenaltyTurnPlayer(),
+    task: pickPenaltyBombTask(),
+    openedAt: Date.now(),
+  };
+  state.penaltyBomb.nextTriggerAt = 0;
+  state.penaltyBomb.history = [state.penaltyBomb.modal, ...state.penaltyBomb.history].slice(0, 5);
+  savePenaltyBombState();
+  playUiTone("success");
+  renderApp();
+}
+
+function rerollPenaltyBombTask() {
+  if (!state.penaltyBomb.modal) {
+    return;
+  }
+  state.penaltyBomb.modal = {
+    ...state.penaltyBomb.modal,
+    task: pickPenaltyBombTask(),
+  };
+  playUiTone("soft");
+  renderApp();
+}
+
+function resolvePenaltyBomb(options = {}) {
+  const { skip = false } = options;
+  if (!state.penaltyBomb.modal) {
+    return;
+  }
+
+  if (skip) {
+    state.penaltyBomb.history = [
+      {
+        ...state.penaltyBomb.modal,
+        task: {
+          text: "这轮选择跳过任务，改为喝一小口。",
+          tag: "改喝一口",
+          note: "如果现场有人不方便做任务，改喝一口就好。",
+          needsConsent: false,
+        },
+      },
+      ...state.penaltyBomb.history.filter((item, index) => index > 0),
+    ].slice(0, 5);
+  }
+
+  state.penaltyBomb.modal = null;
+  advancePenaltyBombTurn({ render: false });
+  if (state.penaltyBomb.running) {
+    schedulePenaltyBomb();
+  }
+  renderApp();
 }
 
 function primeCardGames() {
@@ -1273,13 +1526,25 @@ function deserializeCardsState(raw) {
   const defaults = createCardCenterState();
   return {
     activeTab: raw?.activeTab || defaults.activeTab,
-    lucky: raw?.lucky || defaults.lucky,
+    lucky: deserializeLuckyState(raw?.lucky, defaults.lucky),
     highLow: raw?.highLow || defaults.highLow,
     roulette: raw?.roulette || defaults.roulette,
     king: raw?.king || defaults.king,
     holdem: raw?.holdem || defaults.holdem,
     bigSister: raw?.bigSister || defaults.bigSister,
   };
+}
+
+function deserializeLuckyState(rawLucky, fallbackLucky) {
+  const lucky = {
+    deck: Array.isArray(rawLucky?.deck) ? rawLucky.deck : fallbackLucky.deck,
+    currentCard: rawLucky?.currentCard || null,
+    currentRule: null,
+    showRules: Boolean(rawLucky?.showRules),
+  };
+
+  lucky.currentRule = lucky.currentCard ? buildLuckyRule(lucky.currentCard) : null;
+  return lucky;
 }
 
 function serializeSharedState() {
@@ -1747,6 +2012,25 @@ function randomizeComboChoice() {
   drawComboItem(choice);
 }
 
+function buildLuckyRule(card) {
+  const suitTheme = LUCKY_SUIT_THEMES[card?.suit];
+  const baseRule = LUCKY_CARD_RULES[card?.suit]?.[card?.rank];
+  if (!card || !suitTheme || !baseRule) {
+    return {
+      title: "幸运牌加载中",
+      detail: "这张牌的玩法还没准备好，重新抽一张即可。",
+      tag: "待命中",
+      suitHint: "规则未命中时可以直接重抽，不影响整副牌继续使用。",
+    };
+  }
+
+  return {
+    ...baseRule,
+    suitHint: `${suitTheme.title}：${suitTheme.detail}`,
+    suitThemeTitle: suitTheme.title,
+  };
+}
+
 function drawLuckyCard(options = {}) {
   const { render = true } = options;
   if (!state.cards.lucky.deck.length) {
@@ -1754,10 +2038,7 @@ function drawLuckyCard(options = {}) {
   }
   const card = state.cards.lucky.deck.pop();
   state.cards.lucky.currentCard = card;
-  state.cards.lucky.currentRule = {
-    ...LUCKY_RULES[card.rank],
-    suitHint: LUCKY_SUIT_HINTS[card.suit],
-  };
+  state.cards.lucky.currentRule = buildLuckyRule(card);
   playUiTone("success");
   if (render) {
     renderApp();
@@ -2211,9 +2492,31 @@ function handleClick(event) {
       renderApp();
       break;
     case "draw-bonus":
-      state.bonusResult = getRandomBonusResult();
-      playUiTone("soft");
-      renderApp();
+      openPenaltyBombModal();
+      break;
+    case "start-penalty-bomb":
+      startPenaltyBomb();
+      break;
+    case "pause-penalty-bomb":
+      pausePenaltyBomb();
+      break;
+    case "penalty-next-player":
+      advancePenaltyBombTurn();
+      break;
+    case "penalty-reroll":
+      rerollPenaltyBombTask();
+      break;
+    case "penalty-complete":
+      resolvePenaltyBomb();
+      break;
+    case "penalty-skip":
+      resolvePenaltyBomb({ skip: true });
+      break;
+    case "set-penalty-interval":
+      setPenaltyBombInterval(Number(index));
+      break;
+    case "set-penalty-intensity":
+      setPenaltyBombIntensity(choice);
       break;
     case "next-tip":
       nextTip();
@@ -2256,6 +2559,10 @@ function handleClick(event) {
       break;
     case "draw-lucky-card":
       drawLuckyCard();
+      break;
+    case "toggle-lucky-rules":
+      state.cards.lucky.showRules = !state.cards.lucky.showRules;
+      renderApp();
       break;
     case "reset-lucky-deck":
       resetLuckyDeck();
@@ -2413,6 +2720,12 @@ function normalizeGamePlayers(options = {}) {
     state.spotlightPlayer = "";
   }
 
+  state.penaltyBomb.turnIndex = effectivePlayers.length ? state.penaltyBomb.turnIndex % effectivePlayers.length : 0;
+  if (state.penaltyBomb.modal && !effectivePlayers.includes(state.penaltyBomb.modal.player)) {
+    state.penaltyBomb.modal.player = getPenaltyTurnPlayer();
+  }
+  savePenaltyBombState();
+
   if (resetHoldem) {
     state.cards.holdem = createHoldemGame({
       handNumber: state.cards.holdem.handNumber,
@@ -2422,12 +2735,6 @@ function normalizeGamePlayers(options = {}) {
 }
 
 function setView(nextView) {
-  if (!state.session.joined) {
-    state.view = "home";
-    renderApp();
-    return;
-  }
-
   state.view = nextView;
 
   if (nextView === "truth") {
@@ -2444,9 +2751,8 @@ function setView(nextView) {
 }
 
 function renderApp() {
-  const currentView = state.session.joined ? state.view : "lobby";
-  document.title =
-    currentView === "lobby" ? "聚会小游戏酒馆 - 进入房间" : `聚会小游戏酒馆 - ${VIEW_TITLES[currentView] || "游戏"}`;
+  const currentView = state.view || "home";
+  document.title = `聚会小游戏酒馆 - ${VIEW_TITLES[currentView] || "游戏"}`;
 
   appRoot.innerHTML = `
     <main class="app-shell">
@@ -2455,37 +2761,25 @@ function renderApp() {
         ${renderCurrentView(currentView)}
       </section>
     </main>
+    ${renderPenaltyBombModal()}
   `;
-
-  if (state.session.joined) {
-    queueRoomSync();
-  }
+  updatePenaltyCountdownUi();
 }
 
 function renderTopbar(currentView) {
-  const roomMembers = pruneRoomMembers(state.room.members);
+  const effectivePlayers = getEffectivePlayers();
   return `
     <header class="topbar glass-card">
       <div>
-        <p class="eyebrow">${state.session.joined ? "昵称登录 · 房间模式已启用" : "朋友聚会现场可直接开玩"}</p>
+        <p class="eyebrow">纯前端本地版</p>
         <h1>聚会小游戏酒馆</h1>
         <p class="subtitle">
           ${escapeHtml(getJoinedRoomSubtitle())}
         </p>
       </div>
       <div class="topbar-actions">
-        ${
-          state.session.joined
-            ? `
-              <span class="metric-pill">房间号 <strong>${escapeHtml(state.room.code)}</strong></span>
-              <span class="metric-pill">昵称 <strong>${escapeHtml(state.session.nickname)}</strong></span>
-              <span class="metric-pill"><strong>${roomMembers.length}</strong> 人在线</span>
-            `
-            : ""
-        }
-        ${state.session.joined && currentView !== "home" ? '<button type="button" class="ghost-btn" data-action="go-home">返回主页</button>' : ""}
-        ${state.session.joined ? '<button type="button" class="ghost-btn" data-action="copy-room-link">复制房间链接</button>' : ""}
-        ${state.session.joined ? '<button type="button" class="ghost-btn" data-action="leave-room">退出房间</button>' : ""}
+        ${currentView !== "home" ? '<button type="button" class="ghost-btn" data-action="go-home">返回主页</button>' : ""}
+        <span class="metric-pill"><strong>${effectivePlayers.length}</strong> 位可参与玩家</span>
         <button type="button" class="sound-btn ${state.soundEnabled ? "active" : ""}" data-action="toggle-sound">
           ${state.soundEnabled ? "音效已开" : "音效默认关闭"}
         </button>
@@ -2496,8 +2790,6 @@ function renderTopbar(currentView) {
 
 function renderCurrentView(currentView) {
   switch (currentView) {
-    case "lobby":
-      return renderLobbyView();
     case "truth":
       return renderPromptView("truth");
     case "dare":
@@ -2604,7 +2896,6 @@ function renderLobbyView() {
 
 function renderHomeView() {
   const effectivePlayers = getEffectivePlayers();
-  const roomMembers = pruneRoomMembers(state.room.members);
 
   return `
     <section class="hero-card glass-card">
@@ -2631,8 +2922,8 @@ function renderHomeView() {
         <article class="section-card glass-card">
           <div class="panel-header">
             <div>
-              <h3 class="section-title">房间玩家一览</h3>
-              <p>房间成员会自动加入可随机点名名单，自定义玩家也会并入同一桌。</p>
+              <h3 class="section-title">当前玩家一览</h3>
+              <p>你添加的名字会直接进入随机点名名单；如果没填，系统会自动用默认玩家补齐。</p>
             </div>
             <button type="button" class="secondary-btn" data-route="players">去设置玩家</button>
           </div>
@@ -2640,28 +2931,28 @@ function renderHomeView() {
             ${effectivePlayers.map((name) => `<span class="small-chip">${escapeHtml(name)}</span>`).join("")}
           </div>
           <p class="footer-note">
-            当前房间在线 ${roomMembers.length} 人；${state.players.length ? "你另外手动补充了自定义玩家列表。" : "如果房间里有人还没到场，也可以先去玩家设置页补录名字。"}
+            ${state.players.length ? `你当前手动设置了 ${state.players.length} 位玩家。` : "当前还没手动录入玩家，系统会默认使用玩家1、玩家2、玩家3……"}
           </p>
         </article>
 
         <article class="section-card glass-card">
           <div class="panel-header">
             <div>
-              <h3 class="section-title">房间状态</h3>
+              <h3 class="section-title">本地模式说明</h3>
               <p>${getRoomSyncEngineText()}</p>
             </div>
           </div>
           <div class="status-grid">
             <article>
-              <h4>房间号</h4>
-              <p>${escapeHtml(state.room.code)}</p>
+              <h4>运行方式</h4>
+              <p>纯前端静态网页</p>
             </article>
             <article>
-              <h4>你的昵称</h4>
-              <p>${escapeHtml(state.session.nickname)}</p>
+              <h4>当前保存</h4>
+              <p>本地浏览器内暂存</p>
             </article>
             <article>
-              <h4>同步方式</h4>
+              <h4>同步状态</h4>
               <p>${escapeHtml(state.room.syncMode)}</p>
             </article>
             <article>
@@ -2669,19 +2960,38 @@ function renderHomeView() {
               <p>${escapeHtml(getDatabaseStatusText())}</p>
             </article>
           </div>
-          ${
-            state.room.remoteError
-              ? `<p class="footer-note">云同步提示：${escapeHtml(state.room.remoteError)}</p>`
-              : '<p class="footer-note">如果你准备开启真跨设备房间，请按项目里的 FIREBASE_SETUP.md 填写 Firebase 配置。</p>'
-          }
+          <p class="footer-note">现在打开网页就能直接玩，不再需要登录、进房或复制房间链接。</p>
         </article>
       </div>
       <aside class="aside-stack">
-        ${renderRoomMembersCard()}
+        ${renderLocalModeCard()}
         ${renderBonusCard()}
         ${renderTipCard()}
       </aside>
     </section>
+  `;
+}
+
+function renderLocalModeCard() {
+  return `
+    <article class="side-card glass-card">
+      <div class="panel-header">
+        <div>
+          <h3 class="section-title">当前版本说明</h3>
+          <p>这版已经回退成稳定的本地聚会版，适合一台手机或电脑当主屏来玩。</p>
+        </div>
+      </div>
+      <div class="status-grid">
+        <article>
+          <h4>优点</h4>
+          <p>打开即玩、没有云端配置、基本不会被账号和网络卡住。</p>
+        </article>
+        <article>
+          <h4>限制</h4>
+          <p>不同设备之间不会自动同步，需要大家一起看同一块屏幕。</p>
+        </article>
+      </div>
+    </article>
   `;
 }
 
@@ -2703,34 +3013,34 @@ function renderHomeModuleCard(module) {
 }
 
 function renderRoomMembersCard() {
-  const roomMembers = pruneRoomMembers(state.room.members);
+  const effectivePlayers = getEffectivePlayers();
   return `
     <article class="side-card glass-card">
       <div class="panel-header">
         <div>
-          <h3 class="section-title">房间成员</h3>
-          <p>这部分来自房间登录信息，和手动玩家名单会自动合并使用。</p>
+          <h3 class="section-title">当前玩家名单</h3>
+          <p>这里显示的是当前浏览器里会参与随机点名的名单。</p>
         </div>
       </div>
       ${
-        roomMembers.length
+        effectivePlayers.length
           ? `
             <div class="player-list compact-list">
-              ${roomMembers
+              ${effectivePlayers
                 .map(
-                  (member) => `
+                  (name, index) => `
                     <div class="player-row">
                       <div>
-                        <strong>${escapeHtml(member.nickname)}</strong>
-                        <span>${member.id === state.session.memberId ? "你" : "房间成员"}</span>
+                        <strong>${escapeHtml(name)}</strong>
+                        <span>${state.players.includes(name) ? "自定义玩家" : `默认玩家 ${index + 1}`}</span>
                       </div>
                     </div>
                   `,
                 )
-                .join("")}
+              .join("")}
             </div>
           `
-          : `<div class="empty-state">当前还只有你自己在这个房间里。</div>`
+          : `<div class="empty-state">当前还没有手动录入玩家，系统会自动补默认玩家。</div>`
       }
     </article>
   `;
@@ -2738,8 +3048,7 @@ function renderRoomMembersCard() {
 
 function renderPlayersView() {
   const effectivePlayers = getEffectivePlayers();
-  const roomMembers = pruneRoomMembers(state.room.members);
-  const customOnlyPlayers = state.players.filter((name) => !roomMembers.some((member) => member.nickname === name));
+  const customPlayers = [...state.players];
 
   return `
     <section class="module-layout">
@@ -2748,7 +3057,7 @@ function renderPlayersView() {
           <div class="panel-header">
             <div>
               <h2 class="section-title">自定义玩家设置</h2>
-              <p>支持逗号、顿号、分号或换行批量添加。房间成员会自动入桌，你也可以额外补充不在线的朋友。</p>
+              <p>支持逗号、顿号、分号或换行批量添加。所有游戏都会直接读取这里的名单。</p>
             </div>
           </div>
 
@@ -2768,7 +3077,7 @@ function renderPlayersView() {
           <div class="panel-header" style="margin-top: 18px;">
             <div>
               <h3 class="section-title">当前实际会参与点名的名单</h3>
-              <p>房间成员与自定义玩家会自动合并，所有游戏都从这份名单里随机点名。</p>
+              <p>所有游戏都从这份名单里随机点名；如果这里为空，系统会自动补默认玩家。</p>
             </div>
           </div>
           <div class="chip-row">
@@ -2777,35 +3086,35 @@ function renderPlayersView() {
 
           <div class="two-column" style="margin-top: 18px;">
             <div class="form-card">
-              <h4>房间成员</h4>
-              <p>${roomMembers.length ? `当前在线 ${roomMembers.length} 人。` : "当前只有你自己在房间中。"}</p>
+              <h4>当前参与名单</h4>
+              <p>${effectivePlayers.length ? `当前会参与点名的共有 ${effectivePlayers.length} 位。` : "当前没有玩家。"} </p>
               <div class="player-list compact-list">
                 ${
-                  roomMembers.length
-                    ? roomMembers
+                  effectivePlayers.length
+                    ? effectivePlayers
                         .map(
-                          (member) => `
+                          (name, index) => `
                             <div class="player-row">
                               <div>
-                                <strong>${escapeHtml(member.nickname)}</strong>
-                                <span>${member.id === state.session.memberId ? "你" : "房间成员"}</span>
+                                <strong>${escapeHtml(name)}</strong>
+                                <span>${state.players.includes(name) ? "自定义玩家" : `默认玩家 ${index + 1}`}</span>
                               </div>
                             </div>
                           `,
                         )
                         .join("")
-                    : '<div class="empty-state">房间成员会在这里出现。</div>'
+                    : '<div class="empty-state">如果这里为空，系统会自动补默认玩家。</div>'
                 }
               </div>
             </div>
 
             <div class="form-card">
-              <h4>额外补充玩家</h4>
-              <p>${customOnlyPlayers.length ? `你手动补充了 ${customOnlyPlayers.length} 位未在线玩家。` : "目前没有额外补充玩家。"}</p>
+              <h4>你手动添加的玩家</h4>
+              <p>${customPlayers.length ? `你当前手动保存了 ${customPlayers.length} 位玩家。` : "目前还没有手动添加玩家。"} </p>
               <div class="player-list compact-list">
                 ${
-                  customOnlyPlayers.length
-                    ? customOnlyPlayers
+                  customPlayers.length
+                    ? customPlayers
                         .map((name) => {
                           const index = state.players.indexOf(name);
                           return `
@@ -2819,7 +3128,7 @@ function renderPlayersView() {
                           `;
                         })
                         .join("")
-                    : '<div class="empty-state">如果有人没进房，但你想把他也算进游戏里，可以在上面补录名字。</div>'
+                    : '<div class="empty-state">想让随机点名更准确，可以在上面直接补录大家的名字。</div>'
                 }
               </div>
             </div>
@@ -2929,7 +3238,7 @@ function renderPromptView(gameKey) {
             </article>
             <article>
               <h4>玩家来源</h4>
-              <p>${state.room.members.length ? "房间成员 + 自定义玩家" : "默认玩家或自定义玩家"}</p>
+              <p>${state.players.length ? "自定义玩家" : "默认玩家或自定义玩家"}</p>
             </article>
           </div>
         </article>
@@ -3022,7 +3331,7 @@ function renderTruthOrDareView() {
             </article>
             <article>
               <h4>玩家来源</h4>
-              <p>${state.room.members.length ? "房间成员 + 自定义玩家" : "默认玩家或自定义玩家"}</p>
+              <p>${state.players.length ? "自定义玩家" : "默认玩家或自定义玩家"}</p>
             </article>
           </div>
         </article>
@@ -3127,7 +3436,8 @@ function renderActiveCardGame() {
 }
 
 function renderLuckyGame() {
-  const { currentCard, currentRule, deck } = state.cards.lucky;
+  const { currentCard, currentRule, deck, showRules } = state.cards.lucky;
+  const rule = currentRule || buildLuckyRule(currentCard);
   return `
     <div class="two-column">
       <div class="card-showcase">
@@ -3143,18 +3453,70 @@ function renderLuckyGame() {
       <div class="main-stack">
         <div class="command-card">
           <small>当前规则</small>
-          <h3>${escapeHtml(currentRule.title)}</h3>
-          <p>${escapeHtml(currentRule.detail)}</p>
-          <p class="footer-note">${escapeHtml(currentRule.suitHint)}</p>
+          <div class="chip-row" style="margin-top: 12px;">
+            <span class="small-chip"><strong>${escapeHtml(currentCard ? `${currentCard.suit}${currentCard.rank}` : "?" )}</strong> ${escapeHtml(rule.tag)}</span>
+            <span class="small-chip">${escapeHtml(rule.suitThemeTitle || "幸运牌主题")}</span>
+          </div>
+          <h3>${escapeHtml(rule.title)}</h3>
+          <p>${escapeHtml(rule.detail)}</p>
+          <p class="footer-note">${escapeHtml(rule.suitHint)}</p>
         </div>
         <div class="rules-card">
-          <h4>快速理解</h4>
-          <div class="rules-list">
-            ${["A", "K", "Q", "J"].map((rank) => renderMiniRule(rank, LUCKY_RULES[rank].title, LUCKY_RULES[rank].detail)).join("")}
+          <div class="toggle-row">
+            <div>
+              <h4>52 张玩法地图</h4>
+              <p>整副牌每一张都不同，按花色分成四种主题；抽完一整副才会重新洗回去。</p>
+            </div>
+            <button type="button" class="ghost-btn" data-action="toggle-lucky-rules">${showRules ? "收起完整玩法" : "查看完整 52 张玩法"}</button>
           </div>
-          <p class="footer-note">数字牌会给出更轻快的现场任务，适合快速过几轮暖场。</p>
+          <div class="lucky-theme-grid">
+            ${SUITS.map((suit) => renderLuckyThemeCard(suit)).join("")}
+          </div>
+          ${
+            showRules
+              ? renderLuckyRuleBook()
+              : '<p class="footer-note" style="margin-top: 16px;">想保留惊喜就直接抽牌；想主持得更稳，再展开完整玩法表看一眼全套规则。</p>'
+          }
         </div>
       </div>
+    </div>
+  `;
+}
+
+function renderLuckyThemeCard(suit) {
+  const theme = LUCKY_SUIT_THEMES[suit.symbol];
+  return `
+    <article>
+      <h4>${escapeHtml(`${suit.symbol} ${theme.title}`)}</h4>
+      <p>${escapeHtml(theme.detail)}</p>
+    </article>
+  `;
+}
+
+function renderLuckyRuleBook() {
+  return `
+    <div class="lucky-rulebook">
+      ${SUITS.map(
+        (suit) => `
+          <section class="lucky-rule-section">
+            <div class="panel-header">
+              <div>
+                <h4>${escapeHtml(`${suit.symbol} ${LUCKY_SUIT_THEMES[suit.symbol].title}`)}</h4>
+                <p>${escapeHtml(LUCKY_SUIT_THEMES[suit.symbol].detail)}</p>
+              </div>
+            </div>
+            <div class="rules-list">
+              ${RANKS.map((rank) =>
+                renderMiniRule(
+                  `${suit.symbol} ${rank.label}`,
+                  LUCKY_CARD_RULES[suit.symbol][rank.label].title,
+                  LUCKY_CARD_RULES[suit.symbol][rank.label].detail,
+                ),
+              ).join("")}
+            </div>
+          </section>
+        `,
+      ).join("")}
     </div>
   `;
 }
@@ -3306,7 +3668,7 @@ function renderHoldemGame() {
       <div class="result-card">
         <small>主持提示</small>
         <h3>${escapeHtml(game.feedback)}</h3>
-        <p>${game.players.length ? `庄位目前是 ${escapeHtml(game.players[game.dealerIndex]?.name || "-")}。` : "一局开始后会自动按当前房间玩家发牌。"}</p>
+        <p>${game.players.length ? `庄位目前是 ${escapeHtml(game.players[game.dealerIndex]?.name || "-")}。` : "一局开始后会自动按当前玩家名单发牌。"}</p>
       </div>
 
       ${
@@ -3365,7 +3727,7 @@ function renderHoldemGame() {
                 .join("")
             : `
                 <div class="empty-state">
-                  当前会自动使用房间成员和自定义玩家开桌。点击“发新一局”后，每位玩家都会得到 2 张底牌。
+                  当前会自动使用自定义玩家和默认玩家开桌。点击“发新一局”后，每位玩家都会得到 2 张底牌。
                 </div>
               `
         }
@@ -3577,8 +3939,8 @@ function renderBonusCard() {
       <article class="side-card glass-card">
         <div class="toggle-row">
           <div>
-            <h3 class="section-title">随机惩罚 / 奖励</h3>
-            <p class="helper-text">当前已隐藏，想加点趣味时再展开。</p>
+            <h3 class="section-title">定时惩罚炸弹</h3>
+            <p class="helper-text">当前已隐藏，展开后可以开启定时弹窗惩罚。</p>
           </div>
           <button type="button" class="secondary-btn" data-action="toggle-bonus">展开</button>
         </div>
@@ -3586,23 +3948,126 @@ function renderBonusCard() {
     `;
   }
 
+  const currentPlayer = getPenaltyTurnPlayer();
   return `
     <article class="side-card glass-card">
       <div class="toggle-row">
         <div>
-          <h3 class="section-title">随机惩罚 / 奖励</h3>
-          <p class="helper-text">临场想加点变化时抽一下，轻松就好。</p>
+          <h3 class="section-title">定时惩罚炸弹</h3>
+          <p class="helper-text">默认几分钟弹一次，轮到谁谁接惩罚，想更刺激可以切到“敢玩一点”。</p>
         </div>
         <button type="button" class="ghost-btn" data-action="toggle-bonus">收起</button>
       </div>
-      <div class="bonus-result" data-kind="${escapeHtml(state.bonusResult.kind)}" style="margin-top: 14px;">
-        <strong>${escapeHtml(state.bonusResult.kind)}</strong>
-        <p style="margin: 10px 0 0;">${escapeHtml(state.bonusResult.text)}</p>
+      <div class="status-grid" style="margin-top: 14px;">
+        <article>
+          <h4>当前轮到</h4>
+          <p>${escapeHtml(currentPlayer)}</p>
+        </article>
+        <article>
+          <h4>倒计时</h4>
+          <p data-penalty-countdown>${formatCountdown(getPenaltyCountdownMs())}</p>
+        </article>
+        <article>
+          <h4>强度</h4>
+          <p>${escapeHtml(state.penaltyBomb.intensity)}</p>
+        </article>
+        <article>
+          <h4>状态</h4>
+          <p>${state.penaltyBomb.running ? "计时中" : "已暂停"}</p>
+        </article>
+      </div>
+      <div class="filter-row" style="margin-top: 14px;">
+        ${PENALTY_INTERVAL_OPTIONS.map(
+          (item) => `
+            <button
+              type="button"
+              class="filter-btn ${state.penaltyBomb.intervalMs === item.value ? "active" : ""}"
+              data-action="set-penalty-interval"
+              data-index="${item.value}"
+            >
+              ${item.label}
+            </button>
+          `,
+        ).join("")}
+      </div>
+      <div class="filter-row" style="margin-top: 10px;">
+        ${PENALTY_MODE_OPTIONS.map(
+          (mode) => `
+            <button
+              type="button"
+              class="filter-btn ${state.penaltyBomb.intensity === mode ? "active" : ""}"
+              data-action="set-penalty-intensity"
+              data-choice="${mode}"
+            >
+              ${mode}
+            </button>
+          `,
+        ).join("")}
       </div>
       <div class="button-row">
-        <button type="button" class="primary-btn" data-action="draw-bonus">再来一个</button>
+        <button type="button" class="primary-btn" data-action="${state.penaltyBomb.running ? "pause-penalty-bomb" : "start-penalty-bomb"}">
+          ${state.penaltyBomb.running ? "暂停计时" : "开始计时"}
+        </button>
+        <button type="button" class="secondary-btn" data-action="draw-bonus">立即弹出</button>
+        <button type="button" class="ghost-btn" data-action="penalty-next-player">下一位</button>
       </div>
+      ${
+        state.penaltyBomb.history.length
+          ? `
+            <div class="rules-list" style="margin-top: 16px;">
+              ${state.penaltyBomb.history.slice(0, 3).map(
+                (entry) => `
+                  <div class="rule-item">
+                    <span class="rule-rank">${escapeHtml(entry.player.slice(0, 2))}</span>
+                    <div>
+                      <strong>${escapeHtml(entry.player)}</strong>
+                      <p style="margin: 6px 0 0; color: var(--text-muted);">${escapeHtml(entry.task.text)}</p>
+                    </div>
+                  </div>
+                `,
+              ).join("")}
+            </div>
+          `
+          : '<p class="footer-note" style="margin-top: 14px;">开始计时后，这里会记录最近几次弹出的惩罚。</p>'
+      }
     </article>
+  `;
+}
+
+function renderPenaltyBombModal() {
+  if (!state.penaltyBomb.modal) {
+    return "";
+  }
+
+  const { player, task } = state.penaltyBomb.modal;
+  return `
+    <div class="modal-backdrop">
+      <article class="penalty-modal glass-card">
+        <div class="chip-row">
+          <span class="small-chip"><strong>惩罚时间到</strong></span>
+          <span class="small-chip">${escapeHtml(task.tag)}</span>
+          <span class="small-chip">${escapeHtml(state.penaltyBomb.intensity)}</span>
+        </div>
+        <div class="highlight-box" style="margin-top: 16px;">
+          <small>当前轮到</small>
+          <div style="margin-top: 10px;">
+            <span class="spotlight-name">${escapeHtml(player)}</span>
+          </div>
+        </div>
+        <div class="prompt-card" style="margin-top: 16px;">
+          <p class="prompt-text">${escapeHtml(task.text)}</p>
+        </div>
+        <p class="footer-note">
+          ${escapeHtml(task.note || "如果现场有人不想做，可以直接换一条，或者改成喝一小口。")}
+          ${task.needsConsent ? " 涉及靠近或接触时，先确认对方也愿意。" : ""}
+        </p>
+        <div class="button-row" style="margin-top: 16px;">
+          <button type="button" class="secondary-btn" data-action="penalty-reroll">换一个</button>
+          <button type="button" class="ghost-btn" data-action="penalty-skip">跳过改喝一口</button>
+          <button type="button" class="primary-btn" data-action="penalty-complete">完成并轮到下一位</button>
+        </div>
+      </article>
+    </div>
   `;
 }
 
