@@ -67,76 +67,110 @@ const HOME_MODULES = [
 
 const TRUTH_SOURCE = {
   轻松: [
-    "今天来之前你最期待什么？",
-    "最近一次让你瞬间开心的小事是什么？",
-    "在场谁最会活跃气氛？",
-    "你最常点的外卖是什么？",
-    "你小时候最想学会的技能是什么？",
-    "最近最想去哪个城市玩？",
-    "你最离不开的手机 App 是哪个？",
-    "你觉得自己最适合当哪种聚会担当？",
-    "最近循环播放的一首歌是什么？",
-    "你最擅长做的一道家常菜是什么？",
-    "如果明天放假，你最想怎么过？",
-    "你最喜欢的一部喜剧作品是什么？",
-    "你小时候的外号是什么？",
-    "你最想拥有哪种超能力，但只限日常生活？",
-    "最近一次忍不住大笑是因为什么？",
-    "你最不想在聚会里负责的事是什么？",
-    "如果让你立刻推荐一部电影，会选哪部？",
-    "你最想和朋友一起尝试的活动是什么？",
-    "你觉得自己聊天时最大的优点是什么？",
-    "最近一次被美食治愈是什么时候？",
-    "你最喜欢别人怎么称呼你？",
-    "你觉得今天谁最像气氛组？",
+    "最喜欢吃的食物是什么？",
+    "最讨厌的食物是什么？",
+    "不为人知的小癖好是什么？",
+    "最喜欢的明星是谁？",
+    "最讨厌的明星是谁？",
+    "自己想当明星吗？",
+    "发生过最尴尬的事情是什么？",
+    "见过别人最尴尬的事情是什么？",
+    "做过最无聊的事情是什么？",
+    "无聊的时候最想干什么？",
+    "会经常便秘吗？",
+    "干过最廉价的事情是什么？",
+    "上次哭是什么时候？",
+    "最想哭的一件事是什么？",
+    "身上有胎记吗？长在什么地方？什么形状？",
+    "酒量如何，喝醉了会做什么事情？",
+    "自己拥有的最宝贵的东西是什么？",
+    "自己最不想要的又是什么？",
+    "平时开销花在什么地方最多？",
+    "钱包里会放照片吗？是谁的？",
+    "做过最浪漫的事情是什么？",
+    "想给别人怎样的浪漫？",
+    "如果给你一千万，你最想怎么花？",
+    "如果有来生你会选择当什么？",
+    "我在你眼里是什么样？",
+    "如果时间能倒流，你最希望回到哪一刻？",
+    "洗澡洗到一半没水了怎么办？",
+    "你对自己身上哪个部位最满意？",
+    "你心情不好的时候会干嘛？",
   ],
   搞笑: [
-    "你做过最离谱的口误是什么？",
-    "你有没有把消息发错群或发错人过？最尴尬的一次是什么？",
-    "如果现在要给自己取个搞笑艺名，会叫什么？",
-    "你最像哪种动物？为什么？",
-    "如果你是一道下酒菜，你觉得自己是什么？",
-    "你模仿过谁说话最像？",
-    "你做过最中二的一件事是什么？",
-    "你有没有假装很懂其实完全不懂的时候？",
-    "如果你的生活是一档综艺，标题叫什么？",
-    "你最社死的一次拍照经历是什么？",
-    "你会给自己的起床状态打几分？",
-    "如果让你开一家奇怪的小店，会卖什么？",
-    "你手机里最舍不得删的一张搞笑照片是什么类型？",
-    "你最常用的拖延理由是什么？",
-    "你有没有因为嘴快而后悔过？说的是哪次？",
-    "你会用哪句话形容自己点奶茶时的犹豫？",
-    "你最像朋友口中的哪种“典型人物”？",
-    "如果你突然成了网红，你觉得会因为什么出圈？",
-    "你最奇怪但真实的小习惯是什么？",
-    "如果让你为今天这桌人起一个组合名，会叫什么？",
-    "你最怕被朋友公开的黑历史是什么类型？",
-    "你觉得自己喝到微醺时最明显的表现是什么？",
+    "当异性因为分手找你求安慰，你会怎么做？",
+    "父母、对象、孩子你会怎么排序？",
+    "送礼物会送内衣吗？",
+    "你会翻前任朋友圈吗？",
+    "手机里最舍不得删的聊天记录和谁有关？",
+    "如果今晚必须给一个人发“我想你了”，你会发给谁？",
+    "男人善变还是女人善变？",
+    "男人的话可信还是女人的话？",
+    "如果可以选择，你会选做异性吗？",
+    "如果做异性后，最想干的事情是什么？",
+    "男的是不是天生应该赚钱养家？",
+    "喜欢平胸的女生还是胸大的女生？",
+    "你会因为什么习惯一个人？",
+    "喜欢别人对你做什么小动作？",
+    "讨厌别人对你做什么动作？",
+    "什么样的女人叫有女人味？",
+    "什么样的男人叫有男人味？",
+    "你谈恋爱时会查手机吗？",
+    "如果突然有异性说爱上你了，你怎么办？",
   ],
   微刺激: [
-    "在场谁最有可能突然来一场说走就走的旅行？",
-    "如果只能把秘密告诉在场一个人，你会选谁？",
-    "在场谁的第一印象和现在反差最大？",
-    "如果让你夸在场一个人最吸引人的一点，你会夸谁什么？",
-    "在场谁最像会偷偷准备惊喜的人？",
-    "如果要把一项家务外包给在场某位朋友，你最信任谁？",
-    "你最近一次嘴硬心软是什么时候？",
-    "在场谁最适合当旅行搭子？",
-    "如果要找人陪你熬夜聊天到三点，你会选谁？",
-    "你最近有没有故意装作不在意，其实很在意的事？",
-    "你更容易先主动道歉还是等对方开口？",
-    "在场谁最可能突然脱口而出真话？",
-    "你最近一次小小吃醋是因为什么？",
-    "你会把心事先告诉朋友还是自己消化？",
-    "在场谁最适合和你一起创业？为什么？",
-    "如果让你现在给一位朋友发“谢谢你”，你会发给谁？",
-    "你最怕别人误解你的哪一点？",
-    "你有没有默默关注某个人很久却一直没开口？",
-    "在场谁最可能在关键时刻最靠谱？",
-    "如果今晚结束后只能单独再约一个人继续聊天，你会选谁？",
-    "你做决定时更看感觉还是更看现实？",
-    "你最近一次想重来一次的决定是什么？",
+    "上次接吻是什么时候？",
+    "上次接吻是和谁？",
+    "暗恋过几个异性？",
+    "有主动追求过别人吗？",
+    "有被别人追求过吗？",
+    "现在心里最在意的异性是谁？",
+    "初恋是什么时候？",
+    "初恋对方现在过得怎么样？",
+    "初恋如果再给你一次机会，还会珍惜吗？",
+    "你认为情侣一天都不联系对方正常吗？",
+    "你对另一半有什么要求和底线？",
+    "每天醒来后第一个想起的人是谁？",
+    "理想中的另一半是什么样子的？",
+    "择偶标准是什么？",
+    "被甩过多少次？",
+    "甩过别人多少次？",
+    "甩别人的感觉是怎样的？",
+    "有过空虚寂寞冷的时候吗？",
+    "会做什么事情来缓解空虚寂寞冷？",
+    "分享一下你的恋爱史？",
+    "你对另一半的要求有哪些？",
+    "初恋是在什么情景下发生的？",
+    "你会不会吃回头草？为什么？",
+    "分手后还会继续约吗？",
+    "你会偷偷看喜欢的人的社交动态吗？",
+    "会不会向暗恋的人表白？通常会怎样表白？",
+    "“我爱你”这三个字，你相信吗？",
+    "接受姐弟恋吗？",
+    "接受对方出轨吗？",
+    "是否接受开放式婚姻？",
+    "思想出轨和肉体出轨，哪个更容易接受？",
+    "什么样的分手方式最佳？",
+    "你会选择什么方式跟对方分手？",
+    "你更喜欢爱一个人，还是被一个人爱？",
+    "你觉得分手后还能当朋友吗？",
+    "你在感情上劈过腿没有？",
+    "和异性发生过最暧昧的事情是什么？",
+    "你对喜欢的异性会有什么感觉？",
+    "你上次吵架最伤心是什么时候？",
+    "跟你喜欢的人约会时碰到前任，你会有什么反应？",
+    "情人节最想收到什么礼物？",
+    "你有没有钟意的人？",
+    "你觉得哪位异性的嘴唇看起来最想亲一下？",
+    "你是否幻想过和你喜欢的人做哪些事？",
+    "你觉得你曾经喜欢的人现在还喜欢你吗？",
+    "你最关心的异性是谁？",
+    "如果时间能倒流，你最想改写哪段感情经历？",
+    "跟异性做过最亲密的事是什么？",
+    "你会不会在意对方的过去？",
+    "你会为了众人的反对放弃自己想要的人吗？",
+    "你希望另一半哪个部位最好看？",
+    "如果前任要求复合，你会怎么办？",
   ],
 };
 
@@ -534,23 +568,232 @@ const LUCKY_CARD_RULES = {
   },
 };
 
-const KING_RULES = {
-  K: { title: "国王点将", detail: "指定两位朋友互夸一句，然后一起喝一小口。" },
-  Q: { title: "女王礼仪", detail: "直到下一轮结束，发言前要先说“请”。忘记的人喝一口。" },
-  J: { title: "快问快答", detail: "你指定一位朋友，在 5 秒内回答你的问题。" },
-  A: { title: "自由卡", detail: "你可以选择自己免喝一次，或指定一位朋友喝一小口。" },
-  10: { title: "组队碰杯", detail: "找一位搭档一起碰杯，并喊出今晚口号。" },
-  9: { title: "数字挑战", detail: "9 秒内说出 3 个旅行城市，失败喝一口。" },
-  8: { title: "传递好运", detail: "指定一位朋友获得下一次免喝权。" },
-  7: { title: "左右开弓", detail: "和左右两边的人同时碰杯，如果做不到就喝一口。" },
-  6: { title: "六秒表演", detail: "做一个 6 秒庆祝动作，现场评分过半就算成功。" },
-  5: { title: "五字赞美", detail: "用五个字夸今晚气氛，不能卡壳。" },
-  4: { title: "四拍节奏", detail: "带大家拍手四下，节奏错的人喝一口。" },
-  3: { title: "三选一", detail: "自己选真心话、表演一个动作，或喝一小口。" },
-  2: { title: "双人任务", detail: "指定一位朋友和你一起完成一个击掌动作。" },
-};
+const KING_BAR_TASKS = [
+  {
+    number: 1,
+    tag: "手机局",
+    title: "置顶异性局",
+    detail: "打开微信置顶列表，置顶里有异性联系人就喝一小口；没有微信的话，用你最常用的聊天软件代替。",
+  },
+  {
+    number: 2,
+    tag: "勇气局",
+    title: "妈妈电话勇气测试",
+    detail: "现在敢给妈妈打个电话并说一句“我今天玩得挺开心”的免喝；不敢打的人喝。",
+  },
+  {
+    number: 3,
+    tag: "手机局",
+    title: "手机壁纸",
+    detail: "手机壁纸是风景的喝",
+  },
+  {
+    number: 4,
+    tag: "关键词局",
+    title: "宝宝搜索赛",
+    detail: "在聊天记录里搜索“宝宝”，相关记录最多的人喝；如果并列，并列的人一起喝。",
+  },
+  {
+    number: 5,
+    tag: "数字局",
+    title: "十指相扣点名",
+    detail: "所有人围成一圈，由你随口说一个数字，从你开始顺时针数到谁，谁喝。",
+  },
+  {
+    number: 6,
+    tag: "手机局",
+    title: "低电量警报",
+    detail: "此刻手机电量最低的人喝；如果有人低于 15%，还可以顺手指定一位朋友陪一口。",
+  },
+  {
+    number: 7,
+    tag: "社交局",
+    title: "好友库存王",
+    detail: "打开微信通讯录数量或好友总数，好友最多的人喝；没有微信就比常用社交软件联系人。",
+  },
+  {
+    number: 8,
+    tag: "听觉局",
+    title: "蒙眼听掌声",
+    detail: "你先闭眼，其他人随机拍手 1 到 5 下，猜错就喝；猜对可以指定一人陪一口。",
+  },
+  {
+    number: 9,
+    tag: "传递局",
+    title: "15 秒传手机",
+    detail: "把手机开 15 秒倒计时开始传，铃声响起时手机在谁手里谁喝。",
+  },
+  {
+    number: 10,
+    tag: "抽查局",
+    title: "反诈中心抽查",
+    detail: "手机里没有国家反诈中心App 的人喝一小口。",
+  },
+  {
+    number: 11,
+    tag: "这个没想好",
+    title: "哈哈",
+    detail: "自己喝吧",
+  },
+  {
+    number: 12,
+    tag: "公开局",
+    title: "加字游戏",
+    detail: "每人依次加字，不通顺的人喝，从一个字开始，一个字一个字加",
+  },
+  {
+    number: 13,
+    tag: "猜拳局",
+    title: "左右手猜心术",
+    detail: "找一位朋友把手背到身后，你连猜三次他骰子在左手还是右手；猜错两次以上就喝。",
+  },
+  {
+    number: 14,
+    tag: "资料局",
+    title: "外国地区认证",
+    detail: "打开微信个人信息，地区填成外国或特别离谱地名的人喝；没有微信就看社交平台简介。",
+  },
+  {
+    number: 15,
+    tag: "贴贴局",
+    title: "指哪亲哪",
+    detail: "主持人随机指“手背 / 额头 / 肩膀 / 空气飞吻”之一，你和指定搭档二选一完成；任何一方不想玩就改成碰杯互夸。",
+  },
+  {
+    number: 16,
+    tag: "扫码局",
+    title: "二维码抢扫",
+    detail: "亮出你的微信二维码或任意可扫页面，大家倒数 3 秒同时扫，第一个成功扫上的喝。",
+  },
+  {
+    number: 17,
+    tag: "随机局",
+    title: "雷达点人",
+    detail: "打开微信雷达加朋友或用现场转盘随机点一人，被点到的人喝，你也陪一口。",
+  },
+  {
+    number: 18,
+    tag: "整活局",
+    title: "军训下一个人",
+    detail: "你下一个顺位的人立刻站起来喊一句军训口号并敬礼 5 秒，做不到就喝。",
+  },
+  {
+    number: 19,
+    tag: "互动局",
+    title: "花式喂酒",
+    detail: "经对方同意，用一种特别方式喂下一个人喝一口；不方便就改成双手递杯并给对方取个专属称呼。",
+  },
+  {
+    number: 20,
+    tag: "反差局",
+    title: "锁屏壁纸鉴定",
+    detail: "亮出锁屏壁纸，现场投票选出“最有故事感”或“最反差”的那位，他 / 她喝一小口。",
+  },
+  {
+    number: 21,
+    tag: "故事局",
+    title: "相册临场讲故事",
+    detail: "打开相册最近一张自拍或合照，给它配一个故事；讲到全场认同，不认同就喝。",
+  },
+  {
+    number: 22,
+    tag: "憋笑局",
+    title: "含酒不吞",
+    detail: "所有人一起含一小口饮料坚持 3 秒，最先忍不住吞下、笑喷或露馅的人喝。",
+  },
+  {
+    number: 23,
+    tag: "反差局",
+    title: "反差递杯",
+    detail: "把酒递给你觉得“本人和第一印象最反差”的那个人，对方接杯后喝。",
+  },
+  {
+    number: 24,
+    tag: "刷屏局",
+    title: "短视频第一条",
+    detail: "现场打开抖音或短视频 App，第一条刷到帅哥美女的人喝；如果刷到萌宠，左右两边的人喝。",
+  },
+  {
+    number: 25,
+    tag: "接力局",
+    title: "动作越传越多",
+    detail: "从你开始传动作，每个人都要在上一位动作上加一个新动作，断掉或做错的人喝。",
+  },
+  {
+    number: 26,
+    tag: "心动局",
+    title: "你最喜欢的人喝",
+    detail: "不能直接说名字，只能用三个关键词描述你今晚最想和谁同队；被大家猜中的那个人喝。",
+  },
+  {
+    number: 27,
+    tag: "纸巾局",
+    title: "嘴撕纸巾",
+    detail: "和左手边的人一起用嘴叼住纸巾，两人轮流撕短，先掉纸或先笑场的人喝。",
+  },
+  {
+    number: 28,
+    tag: "关键词局",
+    title: "哈哈哈库存王",
+    detail: "搜索聊天记录里的“哈哈哈”，相关聊天次数最多的那个人喝；如果敢念出最近一句，可以免喝。",
+  },
+  {
+    number: 29,
+    tag: "表情包局",
+    title: "表情包法官",
+    detail: "打开最近使用的一张表情包，让全场投票它最像会发给谁；被点中的人必须现场给它配一句台词，说不出就喝。",
+  },
+  {
+    number: 30,
+    tag: "手速局",
+    title: "秒回王测试",
+    detail: "所有人同时给最近聊天列表第一位发一个“在吗”，最先收到回复的人指定一人喝，最后收到的人自己喝。",
+  },
+  {
+    number: 31,
+    tag: "游戏局",
+    title: "落骰子",
+    detail: "落骰子，掉的人喝",
+  },
+  {
+    number: 32,
+    tag: "抢杯局",
+    title: "手速抢杯",
+    detail: "主持人突然喊“抢杯”，所有人去碰桌上任一只杯子，最后碰到的人喝。",
+  },
+  {
+    number: 33,
+    tag: "小游戏",
+    title: "逛三园",
+    detail: "从你开始玩一轮“逛三园”，主题由你定；卡壳、重复或接不上者喝。",
+  },
+  {
+    number: 34,
+    tag: "小游戏",
+    title: "纸巾对折",
+    detail: "对折不了的喝。",
+  },
+  {
+    number: 35,
+    tag: "反向局",
+    title: "反向口令",
+    detail: "这一轮进入反向口令模式，主持人说“举左手”你们就要举右手，做错的人喝。",
+  },
+  {
+    number: 36,
+    tag: "夸夸局",
+    title: "连环夸夸",
+    detail: "你先夸一个人一句，被夸的人必须立刻再夸下一个；谁夸得最慢、最敷衍或卡住谁喝。",
+  },
+  {
+    number: 37,
+    tag: "游戏局",
+    title: "扔纸",
+    detail: "，所有人做捧水状围起来扔纸团，扔到谁谁喝",
+  },
+];
 
-const KING_RULE_ORDER = ["K", "Q", "J", "A", "10", "9", "8", "7", "6", "5", "4", "3", "2"];
+const KING_BAR_TASK_NUMBERS = KING_BAR_TASKS.map((task) => String(task.number).padStart(2, "0"));
 const BIG_SISTER_RULE_ORDER = ["K", "Q", "J", "A", "10", "9", "8", "7", "6", "5", "4", "3", "2"];
 
 const TRUTH_BANK = buildBank(TRUTH_SOURCE, "truth");
@@ -762,9 +1005,11 @@ function createCardCenterState() {
     },
     king: {
       deck: shuffleArray(createDeck()),
+      taskDeck: shuffleArray([...KING_BAR_TASKS]),
       currentCard: null,
       currentRule: null,
       showRules: false,
+      history: [],
     },
     holdem: createHoldemGame(),
     bigSister: createBigSisterGame(),
@@ -987,7 +1232,7 @@ function primeCardGames() {
   if (!state.cards.roulette.currentRule) {
     drawRouletteCard({ render: false });
   }
-  if (!state.cards.king.currentCard) {
+  if (!state.cards.king.currentCard || !state.cards.king.currentRule) {
     drawKingCard({ render: false });
   }
   if (!state.cards.bigSister.currentCard) {
@@ -1540,7 +1785,7 @@ function deserializeCardsState(raw) {
     lucky: deserializeLuckyState(raw?.lucky, defaults.lucky),
     highLow: raw?.highLow || defaults.highLow,
     roulette: raw?.roulette || defaults.roulette,
-    king: raw?.king || defaults.king,
+    king: deserializeKingState(raw?.king, defaults.king),
     holdem: raw?.holdem || defaults.holdem,
     bigSister: raw?.bigSister || defaults.bigSister,
   };
@@ -1556,6 +1801,17 @@ function deserializeLuckyState(rawLucky, fallbackLucky) {
 
   lucky.currentRule = lucky.currentCard ? buildLuckyRule(lucky.currentCard) : null;
   return lucky;
+}
+
+function deserializeKingState(rawKing, fallbackKing) {
+  return {
+    deck: Array.isArray(rawKing?.deck) ? rawKing.deck : fallbackKing.deck,
+    taskDeck: Array.isArray(rawKing?.taskDeck) && rawKing.taskDeck.length ? rawKing.taskDeck : fallbackKing.taskDeck,
+    currentCard: rawKing?.currentCard || null,
+    currentRule: Number.isInteger(rawKing?.currentRule?.number) ? rawKing.currentRule : null,
+    showRules: Boolean(rawKing?.showRules),
+    history: Array.isArray(rawKing?.history) ? rawKing.history.slice(0, 5) : [],
+  };
 }
 
 function serializeSharedState() {
@@ -2131,9 +2387,14 @@ function drawKingCard(options = {}) {
   if (!state.cards.king.deck.length) {
     state.cards.king.deck = shuffleArray(createDeck());
   }
+  if (!state.cards.king.taskDeck.length) {
+    state.cards.king.taskDeck = shuffleArray([...KING_BAR_TASKS]);
+  }
   const card = state.cards.king.deck.pop();
+  const rule = state.cards.king.taskDeck.pop();
   state.cards.king.currentCard = card;
-  state.cards.king.currentRule = KING_RULES[card.rank];
+  state.cards.king.currentRule = rule;
+  state.cards.king.history = [{ card, rule }, ...state.cards.king.history].slice(0, 5);
   playUiTone("soft");
   if (render) {
     renderApp();
@@ -2142,6 +2403,8 @@ function drawKingCard(options = {}) {
 
 function resetKingDeck() {
   state.cards.king.deck = shuffleArray(createDeck());
+  state.cards.king.taskDeck = shuffleArray([...KING_BAR_TASKS]);
+  state.cards.king.history = [];
   drawKingCard();
 }
 
@@ -3408,7 +3671,7 @@ function renderCardTabs() {
     { key: "lucky", label: "抽鬼牌 / 幸运牌" },
     { key: "highlow", label: "高低牌猜猜" },
     { key: "roulette", label: "轮盘指令牌" },
-    { key: "king", label: "国王指令简化版" },
+    { key: "king", label: "国王酒吧局" },
     { key: "holdem", label: "聚会德州扑克" },
     { key: "bigsister", label: "大姐牌（聚会版）" },
   ];
@@ -3599,13 +3862,16 @@ function renderRouletteGame() {
 }
 
 function renderKingGame() {
-  const { currentCard, currentRule, deck, showRules } = state.cards.king;
+  const { currentCard, currentRule, deck, taskDeck, showRules, history } = state.cards.king;
   return `
     <div class="two-column">
       <div class="card-showcase">
         ${renderPlayingCard(currentCard)}
         <div class="card-meta">
-          <span class="deck-chip">牌堆剩余 ${deck.length} 张</span>
+          <div class="stacked-chips">
+            <span class="deck-chip">扑克牌剩余 ${deck.length} 张</span>
+            <span class="deck-chip">酒吧任务剩余 ${taskDeck.length} 条</span>
+          </div>
           <div class="button-row">
             <button type="button" class="primary-btn" data-action="draw-king-card">抽一张</button>
             <button type="button" class="ghost-btn" data-action="toggle-king-rules">${showRules ? "收起完整规则" : "查看完整规则"}</button>
@@ -3615,21 +3881,43 @@ function renderKingGame() {
       </div>
       <div class="main-stack">
         <div class="command-card">
-          <small>当前任务</small>
+          <small>当前酒吧任务 · 第 ${String(currentRule.number).padStart(2, "0")} 号 · ${escapeHtml(currentRule.tag)}</small>
           <h3>${escapeHtml(currentRule.title)}</h3>
           <p>${escapeHtml(currentRule.detail)}</p>
         </div>
         <div class="rules-card">
-          <h4>简化说明</h4>
-          <p>K、Q、J、A 和数字牌分别映射一条聚会规则。每次翻到一张就立即执行，适合多人快速轮转。</p>
+          <h4>玩法说明</h4>
+          <p>现在这组不再是旧的 13 条固定映射，而是“翻一张扑克牌 + 抽一条酒吧任务”。牌面负责气氛，任务负责整活，抽完任务池会自动重新洗回去。</p>
+          <p class="footer-note">涉及聊天软件的任务，没有对应 App 就用同类软件代替；涉及贴贴、喂酒之类的互动，默认双方同意，不方便就改喝一小口。</p>
         </div>
+        ${
+          history.length > 1
+            ? `
+              <div class="rules-card">
+                <h4>刚刚抽过</h4>
+                <div class="rules-list">
+                  ${history
+                    .slice(1, 5)
+                    .map((entry) =>
+                      renderMiniRule(
+                        `${entry.card.rank}${entry.card.suit}`,
+                        `第 ${String(entry.rule.number).padStart(2, "0")} 号 · ${entry.rule.title}`,
+                        entry.rule.detail,
+                      ),
+                    )
+                    .join("")}
+                </div>
+              </div>
+            `
+            : ""
+        }
         ${
           showRules
             ? `
               <div class="rules-card">
-                <h4>完整规则</h4>
+                <h4>完整任务池</h4>
                 <div class="rules-list">
-                  ${KING_RULE_ORDER.map((rank) => renderMiniRule(rank, KING_RULES[rank].title, KING_RULES[rank].detail)).join("")}
+                  ${KING_BAR_TASKS.map((task) => renderMiniRule(KING_BAR_TASK_NUMBERS[task.number - 1], `${task.title} · ${task.tag}`, task.detail)).join("")}
                 </div>
               </div>
             `

@@ -654,6 +654,12 @@ textarea {
   gap: 12px;
 }
 
+.stacked-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .deck-chip {
   width: fit-content;
 }
