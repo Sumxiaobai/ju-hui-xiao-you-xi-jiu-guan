@@ -288,6 +288,7 @@ const PENALTY_INTERVAL_OPTIONS = [
 ];
 
 const PENALTY_MODE_OPTIONS = ["轻量", "混合", "敢玩一点"];
+const PENALTY_MODAL_LEAD_MS = 3000;
 
 const POPUP_PENALTY_BANK = {
   轻量: [
@@ -476,7 +477,7 @@ const LUCKY_CARD_RULES = {
     K: { title: "搭档举杯", tag: "氛围升温", detail: "选一位朋友做本轮搭档，你们一起碰杯并喊一句今晚口号。" },
     Q: { title: "真诚三连夸", tag: "夸夸卡", detail: "用三种不同表达夸同一个人，不能重复意思。" },
     J: { title: "默契同答", tag: "默契测试", detail: "和右手边的朋友同时说出一种最想吃的夜宵；一样则全身而退，不一样一起碰杯。" },
-    10: { title: "十秒合影位", tag: "双人站位", detail: "和一位朋友肩并肩站 10 秒，摆出一个“今晚最熟”的合照姿势。" },
+    10: { title: "十秒合影位", tag: "双人站位", detail: "和一位朋友肩并肩做 10 秒，摆出一个“今晚最熟”的合照姿势（勾肩搭臂）。" },
     9: { title: "Stroop 训练", tag: "反应挑战", detail: "主持人连续给你 7 个颜色词卡，比如“蓝”字用白色显示，你要说出看到的颜色而不是念字，5 秒内完成。卡住或说错喝一小口。" },
     8: { title: "耳语感谢", tag: "低声互动", detail: "靠近一位朋友，用只有对方能听见的音量说一句今晚感谢。" },
     7: { title: "七秒对视", tag: "心跳局", detail: "和任意一人对视 7 秒，谁先笑谁喝一小口。" },
@@ -494,7 +495,7 @@ const LUCKY_CARD_RULES = {
     10: { title: "固定开场白", tag: "口头规则", detail: "接下来这一轮每次发言前都必须先说“我想说的是”，漏掉的人喝一小口。" },
     9: { title: "五秒报菜名", tag: "快嘴挑战", detail: "5 秒内说出 3 种下酒菜或零食，超时喝一小口。" },
     8: { title: "八拍节奏", tag: "全桌互动", detail: "带全场拍 8 下节奏，谁乱拍谁喝。" },
-    7: { title: "七词接龙", tag: "词汇挑战", detail: "说出 7 个和聚会有关的词，卡壳就喝一小口。" },
+    7: { title: "成语接龙", tag: "词汇挑战", detail: "成语接龙，说不上的喝酒" },
     6: { title: "六连口令", tag: "笑场警报", detail: "把“喝酒要适度”连说 6 遍，不能笑场，失败就喝一小口。" },
     5: { title: "同数淘汰", tag: "手势喝酒", detail: "全桌同时出 1 到 5 的手势，和你一样的人都喝一小口。" },
     4: { title: "反手整轮", tag: "持续效果", detail: "接下来这一轮每次拿杯都必须用非惯用手完成，忘记就补喝一小口。" },
@@ -506,10 +507,10 @@ const LUCKY_CARD_RULES = {
     K: { title: "逛三园", tag: "经典小游戏", detail: "你先定一个类别，例如水果、歌手或城市，从你开始顺时针接，卡壳或重复的人喝一小口。" },
     Q: { title: "左右站队", tag: "选边小游戏", detail: "你喊一个二选一题目，例如火锅还是烧烤；全场立刻选边，人数较少那边一起碰杯。" },
     J: { title: "口型传话", tag: "互动传递", detail: "你想一句短话，只用嘴型传给下一位，依次传 3 个人，最后一位大声说出结果。" },
-    10: { title: "艺术生请就位", tag: "身份小游戏", detail: "自认艺术生的人现场表演 10 秒；如果你不认，就喝一小口并指定一位你觉得最有艺术细胞的人补个 5 秒动作。" },
+    10: { title: "艺术生请就位", tag: "身份小游戏", detail: "指定一个艺术生现场表演 10 秒；如果ta做了这个惩罚，就可以让任何人做大冒险。" },
     9: { title: "数字炸弹", tag: "反应小游戏", detail: "从你开始顺时针报数，逢 3 或含 3 直接拍桌跳过，出错的人喝一小口。" },
     8: { title: "谁最像", tag: "全桌投票", detail: "你说一个场景，例如“最可能临时改主意的人”，全场同时指一个人，被最多指的人回答轻松问题或喝一小口。" },
-    7: { title: "歌词接龙", tag: "接龙小游戏", detail: "从你开始接一句歌词，接不上、重复或卡住超过 3 秒的人喝一小口。" },
+    7: { title: "歌词中带“字”", tag: "歌词小游戏", detail: "你选择一个字，然后说一句歌词必须含有这个“字”，说不上的人喝酒" },
     6: { title: "六秒同答", tag: "默契测试", detail: "你指定一位朋友，6 秒后你们同时说出一种下酒菜；一样就全身而退，不一样一起碰杯。" },
     5: { title: "五轮加速", tag: "词汇小游戏", detail: "你定一个类别，从你开始全桌每人快速说一个，连过 5 人不重复就算成功，断掉的人喝一小口。" },
     4: { title: "反向抢答", tag: "脑筋急转", detail: "你指定一个常见类别，例如颜色或水果，接下来一圈里每个人都要说一个“不是它”的答案，重复或想太久的人喝一小口。" },
@@ -859,7 +860,12 @@ function startPenaltyBombTicker() {
   }
 
   penaltyBombTicker = window.setInterval(() => {
-    if (state.penaltyBomb.running && !state.penaltyBomb.modal && state.penaltyBomb.nextTriggerAt && Date.now() >= state.penaltyBomb.nextTriggerAt) {
+    if (
+      state.penaltyBomb.running &&
+      !state.penaltyBomb.modal &&
+      state.penaltyBomb.nextTriggerAt &&
+      Date.now() >= state.penaltyBomb.nextTriggerAt - PENALTY_MODAL_LEAD_MS
+    ) {
       openPenaltyBombModal();
       return;
     }
@@ -3960,13 +3966,13 @@ function renderBonusCard() {
       <div class="toggle-row">
         <div>
           <h3 class="section-title">定时惩罚炸弹</h3>
-          <p class="helper-text">默认几分钟弹一次，轮到谁谁接惩罚，想更刺激可以切到“敢玩一点”。</p>
+          <p class="helper-text">默认几分钟弹一次，倒数 3 秒会提前弹窗，轮到谁谁接惩罚。</p>
         </div>
         <button type="button" class="ghost-btn" data-action="toggle-bonus">收起</button>
       </div>
       <div class="penalty-status-banner ${urgent ? "is-urgent" : ""}" style="margin-top: 14px;">
         <strong>${urgent ? "即将触发" : "正在巡航"}</strong>
-        <span>${urgent ? "10 秒内会弹出惩罚窗口" : "时间到了会自动弹窗点名"}</span>
+        <span>${urgent ? "倒数 3 秒会提前弹出惩罚窗口" : "时间快到时会自动提前弹窗点名"}</span>
       </div>
       <div class="status-grid" style="margin-top: 14px;">
         <article>
