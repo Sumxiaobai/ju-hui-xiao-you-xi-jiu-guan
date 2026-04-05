@@ -870,6 +870,60 @@ textarea {
   font-size: 1.04rem;
 }
 
+.duel-top-actions {
+  margin-top: 0;
+  justify-content: flex-end;
+}
+
+.duel-player-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.duel-seat.is-hot {
+  border-color: rgba(242, 179, 107, 0.28);
+  box-shadow: 0 14px 30px rgba(242, 179, 107, 0.08);
+}
+
+.duel-score-panel {
+  margin-top: 14px;
+}
+
+.duel-versus-row {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+}
+
+.duel-vs-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(242, 179, 107, 0.2), rgba(255, 133, 95, 0.16));
+  color: #fff0db;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(242, 179, 107, 0.22);
+}
+
+.duel-hand-card .mini-card-row {
+  min-height: 92px;
+  margin-top: 4px;
+}
+
+.duel-theme-note {
+  border-color: rgba(255, 143, 173, 0.2);
+  background: linear-gradient(135deg, rgba(255, 143, 173, 0.12), rgba(242, 179, 107, 0.08));
+}
+
+.duel-theme-note small {
+  color: #ffd7e4;
+}
+
 .footer-note {
   margin-top: 10px;
   color: var(--text-muted);
@@ -1055,6 +1109,15 @@ textarea {
 
   .lucky-theme-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .duel-player-grid,
+  .duel-versus-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .duel-versus-row {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   }
 }
 
