@@ -976,148 +976,87 @@ const DUEL_SKILL_CARDS = [
   { id: "skill-opp", title: "拆掉最大牌", detail: "把对方当前最强的一张可见牌换掉。", key: "refreshOpponent" },
 ];
 const INTIMACY_ACTION_OPTIONS = [
-  { key: "probe", label: "试探", short: "探", detail: "先轻一点，把温度往上拎。", power: 1 },
-  { key: "direct", label: "直球", short: "直", detail: "不绕弯，赢了会非常上头。", power: 3 },
-  { key: "tease", label: "拉扯", short: "扯", detail: "嘴硬一点，但不真的退。", power: 2 },
-  { key: "counter", label: "反撩", short: "反", detail: "等对方先动，再把节奏拿回来。", power: 2 },
+  { key: "probe", label: "轻一点", short: "轻", detail: "稳一点玩，分数 +1。适合先试试水。", power: 1 },
+  { key: "direct", label: "直接夸", short: "夸", detail: "最主动的一种，分数 +3。适合想抢节奏。", power: 3 },
+  { key: "tease", label: "开玩笑", short: "逗", detail: "轻松一点不尴尬，分数 +2。", power: 2 },
+  { key: "counter", label: "反问回去", short: "问", detail: "把球抛回去，分数 +2。适合接招。", power: 2 },
 ];
 const INTIMACY_MATCHUP_MATRIX = {
-  "probe:probe": { title: "互相试探", detail: "谁都没躲，气氛先慢慢升。", meter: 1, leftBonus: 0, rightBonus: 0 },
-  "probe:direct": { title: "试探撞上直球", detail: "一边在试温度，一边已经不藏了。", meter: 2, leftBonus: 0, rightBonus: 1 },
-  "direct:probe": { title: "直球压过试探", detail: "有人先把窗户纸捅开了。", meter: 2, leftBonus: 1, rightBonus: 0 },
-  "probe:tease": { title: "试探遇到拉扯", detail: "一边想靠近，一边故意逗。", meter: 2, leftBonus: 0, rightBonus: 1 },
-  "tease:probe": { title: "拉扯接住试探", detail: "看似嘴硬，其实已经接招。", meter: 2, leftBonus: 1, rightBonus: 0 },
-  "probe:counter": { title: "试探撞上反撩", detail: "有人先伸手，另一边准备翻盘。", meter: 1, leftBonus: 1, rightBonus: 0 },
-  "counter:probe": { title: "反撩等着回击", detail: "有人想稳一点，有人却不打算放过。", meter: 1, leftBonus: 0, rightBonus: 1 },
-  "direct:direct": { title: "双直球对撞", detail: "这轮谁都不装，直接把气氛点燃。", meter: 3, leftBonus: 1, rightBonus: 1 },
-  "direct:tease": { title: "直球对拉扯", detail: "一边猛，一边还想嘴硬。", meter: 3, leftBonus: 1, rightBonus: 1 },
-  "tease:direct": { title: "拉扯对直球", detail: "嘴上在拐弯，眼神却已经暴露。", meter: 3, leftBonus: 1, rightBonus: 1 },
-  "direct:counter": { title: "直球撞反撩", detail: "先出手的人，反而可能被反拿节奏。", meter: 2, leftBonus: 0, rightBonus: 2 },
-  "counter:direct": { title: "反撩克直球", detail: "对方越猛，回击就越有感觉。", meter: 2, leftBonus: 2, rightBonus: 0 },
-  "tease:tease": { title: "双人拉扯", detail: "谁都在撩，但谁都不肯先认。", meter: 2, leftBonus: 1, rightBonus: 1 },
-  "tease:counter": { title: "拉扯遇反撩", detail: "一边会逗，一边更会接。", meter: 2, leftBonus: 1, rightBonus: 1 },
-  "counter:tease": { title: "反撩接拉扯", detail: "本来只是逗一下，结果节奏越来越黏。", meter: 2, leftBonus: 1, rightBonus: 1 },
-  "counter:counter": { title: "谁都不肯让", detail: "两边都在等对方先露底。", meter: 1, leftBonus: 0, rightBonus: 0 },
+  "probe:probe": { title: "两边都很稳", detail: "这轮谁都没抢，先看看彼此反应。", meter: 1, leftBonus: 0, rightBonus: 0 },
+  "probe:direct": { title: "一边稳，一边直接夸", detail: "右边这轮更主动，所以更容易拿分。", meter: 2, leftBonus: 0, rightBonus: 1 },
+  "direct:probe": { title: "一边直接夸，一边先观察", detail: "左边先把气氛带起来了。", meter: 2, leftBonus: 1, rightBonus: 0 },
+  "probe:tease": { title: "一边保守，一边开玩笑", detail: "会接话的人这轮会更顺。", meter: 2, leftBonus: 0, rightBonus: 1 },
+  "tease:probe": { title: "一边开玩笑，一边保守", detail: "左边更会带节奏一点。", meter: 2, leftBonus: 1, rightBonus: 0 },
+  "probe:counter": { title: "一边先试，一边把球丢回来", detail: "会接招的人更占便宜。", meter: 1, leftBonus: 1, rightBonus: 0 },
+  "counter:probe": { title: "一边反问，一边先观察", detail: "右边更容易把话题接下去。", meter: 1, leftBonus: 0, rightBonus: 1 },
+  "direct:direct": { title: "两边都很直接", detail: "双方都不绕弯，这轮拼底牌也拼胆量。", meter: 3, leftBonus: 1, rightBonus: 1 },
+  "direct:tease": { title: "直接夸遇上开玩笑", detail: "一个冲得快，一个接得巧。", meter: 3, leftBonus: 1, rightBonus: 1 },
+  "tease:direct": { title: "开玩笑遇上直接夸", detail: "气氛很快就起来了。", meter: 3, leftBonus: 1, rightBonus: 1 },
+  "direct:counter": { title: "直接夸遇上反问回去", detail: "谁更会接话，谁就更容易赢。", meter: 2, leftBonus: 0, rightBonus: 2 },
+  "counter:direct": { title: "反问回去接住直接夸", detail: "右边很主动，但左边也很会回。", meter: 2, leftBonus: 2, rightBonus: 0 },
+  "tease:tease": { title: "两边都在开玩笑", detail: "这一轮会很轻松，分差通常不会太大。", meter: 2, leftBonus: 1, rightBonus: 1 },
+  "tease:counter": { title: "开玩笑遇上反问回去", detail: "都是会接话的人，就看底牌谁更高。", meter: 2, leftBonus: 1, rightBonus: 1 },
+  "counter:tease": { title: "反问回去遇上开玩笑", detail: "谁更会顺着话往下走，谁更占优。", meter: 2, leftBonus: 1, rightBonus: 1 },
+  "counter:counter": { title: "两边都在接招", detail: "这轮比的是谁更稳。", meter: 1, leftBonus: 0, rightBonus: 0 },
 };
 const INTIMACY_TIER_META = [
-  { key: "warmup", label: "轻试探", max: 2, hint: "刚刚起势，适合眼神和一句话先拉近。" },
-  { key: "heat", label: "拉扯升温", max: 5, hint: "开始有推进感了，嘴硬和靠近会同时出现。" },
-  { key: "close", label: "近距离", max: 8, hint: "已经不只是说说而已，动作会明显更近。" },
-  { key: "peak", label: "临界点", max: 10, hint: "再往上就会触发终局任务。" },
+  { key: "warmup", label: "热身局", max: 2, hint: "先从最轻松的互动开始，适合大家读懂玩法。" },
+  { key: "heat", label: "进入状态", max: 4, hint: "文案会比前两轮直接一点，但还是偏轻松。" },
+  { key: "close", label: "熟练局", max: 10, hint: "已经玩明白了，可以上更会一点的任务。" },
 ];
 const INTIMACY_PROMPT_BANK = {
   warmup: {
     winner: [
-      "{loser} 看着 {winner} 说一句“这轮你先把我拿捏住了”，再轻碰一下杯。",
-      "{loser} 用五个字夸 {winner} 今天最加分的一点，卡壳就改喝。",
-      "{loser} 先盯着 {winner} 3 秒，再小声说一句“你今天状态太犯规了”。",
-      "{loser} 对 {winner} 说一句“你要是再这样看我，我下一轮更容易输”。",
-      "{loser} 把下一口饮料递到 {winner} 手边，再补一句“这把你先赢”。",
-      "{loser} 主动叫一次 {winner} 的名字，再加一句“先记住你这轮的样子”。",
-      "{loser} 看着 {winner} 说“你现在有点太会了”，说完自己先喝一小口。",
-      "{loser} 认真回答：{winner} 刚刚最让人顶不住的点是什么。",
-      "{loser} 对 {winner} 说一句“我知道你这轮是故意的”，语气越真越好。",
+      "{loser} 夸 {winner} 一句，要求具体到一个细节，比如笑容、说话方式或今天的穿搭。",
+      "{loser} 对 {winner} 说一句“这把你更会玩”。",
+      "{loser} 叫一次 {winner} 的名字，再补一句“这轮先记你一分”。",
+      "{loser} 把下一口饮料递到 {winner} 手边，说一句“这把你先赢”。",
+      "{loser} 用五个字形容 {winner} 这一轮的状态，想不出就喝一口。",
+      "{loser} 看着 {winner} 说一句“你刚刚那下挺会的”。",
     ],
     pair: [
       "{left} 和 {right} 同时说出对方今晚第一眼最顺眼的地方。",
-      "{left} 和 {right} 对视 3 秒，谁先笑谁先喝一小口。",
-      "{left} 和 {right} 同步比一个心，再一起碰杯。",
-      "{left} 和 {right} 同时回答：“如果今晚要坐定一个位置，我会想坐你哪边？”",
-      "{left} 和 {right} 同步把手掌隔空对向对方，停 4 秒后一起放下。",
-      "{left} 和 {right} 用一句话互相总结对方这一轮的状态。",
-      "{left} 和 {right} 一起小声说一句“这轮有点上头了”。",
+      "{left} 和 {right} 对视 3 秒，谁先笑谁喝一口。",
+      "{left} 和 {right} 一起碰杯，然后各说一句“继续”。",
+      "{left} 和 {right} 互相用一句话总结对方这一轮的状态。",
+      "{left} 和 {right} 一起比一个耶，再同时看向对方 2 秒。",
+      "{left} 和 {right} 同时回答：“如果下一轮继续坐一起，我愿意吗？”",
     ],
   },
   heat: {
     winner: [
-      "{loser} 用偏软一点的语气对 {winner} 说：“你这样真的会让我分心。”",
-      "{loser} 经 {winner} 同意后，手背轻轻碰一下对方，再说“先欠你一把反杀”。",
-      "{loser} 靠近 {winner} 半步，说一句“你离近一点更难顶”。",
-      "{loser} 闭眼 3 秒，让 {winner} 在耳边说一句话，复述错了就改喝。",
-      "{loser} 经同意后帮 {winner} 整一下衣领或头发，再补一句“你这样更犯规”。",
-      "{loser} 对 {winner} 说：“你刚刚那下太会，我现在还没缓过来。”",
-      "{loser} 任选一项：叫一次 {winner} 的昵称，或者认真夸对方一句“很会拿捏人”。",
-      "{loser} 把手放在胸口，看着 {winner} 说“这轮心跳真的快了一点”。",
-      "{loser} 对 {winner} 说一句今天最想和对方一起做的小事，要具体。",
+      "{loser} 对 {winner} 说一句“你刚刚那下确实让我分心了”。",
+      "{loser} 任选一项：夸 {winner} 一句，或者和 {winner} 轻碰一下杯。",
+      "{loser} 对 {winner} 说一句“你要是再赢一轮，我就更难翻盘了”。",
+      "{loser} 看着 {winner} 说一句今天最想听到对方说的话。",
+      "{loser} 说出 {winner} 刚刚最加分的一个动作或表情。",
+      "{loser} 经同意后和 {winner} 肩并肩靠 3 秒，不想做就改喝。",
     ],
     pair: [
-      "{left} 和 {right} 一起回答：“刚刚那轮是谁先让气氛变得不对劲的？”",
-      "{left} 和 {right} 同时比“耶”，肩并肩靠近一点保持 3 秒。",
-      "{left} 和 {right} 一起哼一句甜一点的歌，谁先停谁喝。",
+      "{left} 和 {right} 一起回答：“刚刚那轮是谁先带起节奏的？”",
       "{left} 和 {right} 互相给对方起一个今晚限定称呼，并立刻叫一次。",
-      "{left} 和 {right} 一起做爱心手势，保持 4 秒再放下。",
       "{left} 和 {right} 同时说出“如果现在只能夸一句，我会夸你……”。",
-      "{left} 和 {right} 一起盯着对方鼻尖 3 秒，谁先躲开谁喝。",
+      "{left} 和 {right} 一起盯着对方 3 秒，谁先移开谁喝。",
+      "{left} 和 {right} 同时伸手到桌子中间碰一下拳，再收回。",
+      "{left} 和 {right} 一起回答：“现在更像谁先心软？”",
     ],
   },
   close: {
     winner: [
-      "{loser} 经 {winner} 同意后，用额头轻轻碰一下对方，停 4 秒后分开。",
-      "{loser} 经同意后挽着 {winner} 的手臂走 5 步，中途不松开。",
-      "{loser} 靠近 {winner} 一点，用很轻的声音说：“你这样真的会让我乱套。”",
-      "{loser} 经同意后让手指和 {winner} 指尖轻轻碰 3 秒，再说“这把我记住了”。",
-      "{loser} 看着 {winner} 说：“我现在有点分不清，是输牌上头还是看你上头。”",
-      "{loser} 经同意后肩并肩靠着 {winner} 数 5 秒，再自然分开。",
-      "{loser} 对 {winner} 说：“你刚才那个表情，我大概会记一会儿。”",
-      "{loser} 任选一项：对视 5 秒，或者对 {winner} 说一句“你坐我旁边会更危险”。",
-      "{loser} 经同意后把杯子和 {winner} 的杯子轻轻贴近停 3 秒，再一起放下。",
+      "{loser} 对 {winner} 说一句“这把不是我菜，是你太会了”。",
+      "{loser} 经同意后和 {winner} 对视 5 秒，不想做就改喝两口。",
+      "{loser} 说出一句只夸 {winner} 的真心话，要具体。",
+      "{loser} 任选一项：和 {winner} 轻碰手背 3 秒，或者直接喝两口。",
+      "{loser} 对 {winner} 说一句“如果下一轮还选人，我大概率还会选你”。",
+      "{loser} 经同意后和 {winner} 轻碰一下肩，再说“这轮你拿下了”。",
     ],
     pair: [
-      "{left} 和 {right} 经双方同意后额头轻碰 3 秒；不想做就一起改喝。",
-      "{left} 和 {right} 一起回答：“你觉得对方刚刚哪一秒最会撩？”",
-      "{left} 和 {right} 同时伸手到桌面中间，指尖轻碰一下再收回。",
-      "{left} 和 {right} 一起说一句“再这样下去就不好收场了”。",
-      "{left} 和 {right} 肩并肩靠一下，保持 5 秒，谁先笑场谁喝。",
-      "{left} 和 {right} 同步叫一次对方名字，然后各自低头缓 2 秒。",
-      "{left} 和 {right} 同时回答：“现在更像是谁先心软？”",
-    ],
-  },
-  peak: {
-    winner: [
-      "{loser} 经 {winner} 同意后，凑近到只差一点点的距离，停 2 秒再躲开。",
-      "{loser} 经同意后把手掌轻轻覆在 {winner} 手背上 5 秒，再说“这轮我真服了”。",
-      "{loser} 看着 {winner} 认真说：“你再这样来两轮，我可能真的撑不住。”",
-      "{loser} 经同意后轻轻碰一下 {winner} 的脸侧，再说一句“你今天太会”。",
-      "{loser} 对 {winner} 说：“如果只能选一个人继续玩，我大概率还会选你。”",
-      "{loser} 轻声对 {winner} 说一句只有对方能听清的话，说完自己先喝一口压心跳。",
-      "{loser} 经同意后和 {winner} 小拇指轻勾两秒，再自然松开。",
-      "{loser} 看着 {winner} 说：“你现在要是再叫我一下名字，我可能真扛不住。”",
-      "{loser} 任选一项：靠近说一句悄悄话，或者认真夸 {winner} 今天最心动的一点。",
-    ],
-    pair: [
-      "{left} 和 {right} 一起说出“如果现在关灯前最后看一眼，我会看你哪里”。",
-      "{left} 和 {right} 同时靠近半步，停 3 秒，再一起后退。",
-      "{left} 和 {right} 经双方同意后手背贴一下 5 秒，不想做就改喝两口。",
-      "{left} 和 {right} 一起回答：“现在更像谁在硬撑镇定？”",
-      "{left} 和 {right} 同时说一句“这轮真的有点过于会了”。",
-      "{left} 和 {right} 对视 5 秒，谁先移开谁先喝。",
-      "{left} 和 {right} 一起用最低的声音叫一次对方的名字。",
-    ],
-  },
-  finale: {
-    winner: [
-      "{loser} 经 {winner} 同意后，靠近到能感觉到呼吸的距离停 3 秒，再自己退开。",
-      "{loser} 看着 {winner} 认真说：“如果你再赢我一轮，我可能真的会心软。”",
-      "{loser} 经同意后和 {winner} 额头贴额头 5 秒，谁先笑谁补喝一口。",
-      "{loser} 经同意后让 {winner} 轻声在耳边说一句“继续还是停”，只许回答一个字。",
-      "{loser} 直接对 {winner} 说出一句今晚最想听到的话，说完自己低头缓 2 秒。",
-      "{loser} 经同意后把掌心递给 {winner} 轻点一下，再说“这把真的被你拿下了”。",
-      "{loser} 认真看着 {winner} 说：“这不是输赢的问题，是你今天太犯规。”",
-      "{loser} 任选一项：贴肩 5 秒，或者说一句“我现在确实有点被你搞乱了”。",
-      "{loser} 经同意后和 {winner} 同步把杯子举到唇边停 3 秒，再一起喝一小口。",
-      "{loser} 对 {winner} 说一句“今晚如果要留一个最心动瞬间，就是刚刚”。",
-      "{loser} 经同意后让两人手指轻轻扣一下 3 秒，再各自收回。",
-      "{loser} 看着 {winner} 说：“我已经记不清是第几次想选你了。”",
-    ],
-    pair: [
-      "{left} 和 {right} 一起完成终局二选一：额头轻碰 5 秒，或者互说一句只对对方讲的真心话。",
-      "{left} 和 {right} 同时说一句“今晚最不想让它停在这里的，就是现在”。",
-      "{left} 和 {right} 经双方同意后手背贴 6 秒，谁先躲开谁先喝。",
-      "{left} 和 {right} 一起回答：“如果这局结束后还要继续坐一起，我会愿意吗？”",
-      "{left} 和 {right} 同时靠近一点，谁先笑场谁负责说一句最直球的话。",
-      "{left} 和 {right} 各自说出“今晚对方最让自己记住的一秒”。",
-      "{left} 和 {right} 一起低声倒数 3、2、1，然后同时看向对方眼睛。",
-      "{left} 和 {right} 共同选一项终局动作：碰额头、碰肩、轻碰手背，不想做就一起改喝两口。",
+      "{left} 和 {right} 一起回答：“对方刚刚最加分的一点是什么？”",
+      "{left} 和 {right} 对视 5 秒，谁先笑谁喝。",
+      "{left} 和 {right} 同时说一句“这轮确实有点会”。",
+      "{left} 和 {right} 经双方同意后轻碰一下手背，不想做就一起喝。",
+      "{left} 和 {right} 同时说出一句最想听对方说的话。",
+      "{left} 和 {right} 一起碰杯后再互相说一句“继续”。",
     ],
   },
 };
@@ -1532,8 +1471,8 @@ function createDuelIntimacyState(previous = {}) {
     rightChoice: actionKeys.includes(previous.rightChoice) ? previous.rightChoice : "",
     winner: ["left", "right", "draw"].includes(previous.winner) ? previous.winner : "",
     result: previous.result || null,
-    message: previous.message || "发新一轮后，双方先各自锁定试探、直球、拉扯或反撩，再一起揭晓。",
-    penalty: previous.penalty || "这套模式默认先喝再做互动；任何一方不想做都可以改喝。",
+    message: previous.message || "发新一轮后，每个人选一个按钮，再一起揭晓结果。",
+    penalty: previous.penalty || "输的人先喝一小口，再做一条轻互动；不想做就改成再喝一口。",
     moment: previous.moment || "",
     memory: Array.isArray(previous.memory) ? previous.memory.slice(0, 6) : [],
     recentPromptIds: Array.isArray(previous.recentPromptIds) ? previous.recentPromptIds.slice(0, 16) : [],
@@ -3200,17 +3139,7 @@ function pickIntimacyPrompt(game, context) {
   game.recentPromptIds = [selectedId, ...game.recentPromptIds.filter((id) => id !== selectedId)].slice(0, 16);
 
   const promptText = renderDuelMomentText(selectedText, context);
-  const shouldPrefix = context.tier !== "warmup" && game.memory.length;
-  if (!shouldPrefix) {
-    return promptText;
-  }
-
-  const prefixTemplate = pickRandom(INTIMACY_MEMORY_PREFIXES);
-  const prefix = renderDuelMomentText(prefixTemplate, {
-    ...context,
-    memory: game.memory[0]?.hook || game.memory[0]?.title || "",
-  });
-  return `${prefix} ${promptText}`;
+  return promptText;
 }
 
 function startDuelIntimacyRound() {
@@ -3233,8 +3162,8 @@ function startDuelIntimacyRound() {
     rightChoice: "",
     winner: "",
     result: null,
-    message: "底牌已经发好，双方各自选一个动作，选完就能同步揭晓。",
-    penalty: "揭晓后系统只会给出一条轻互动，不叠加额外机制。",
+    message: "底牌已经发好。每个人只要点一个按钮，然后一起揭晓就行。",
+    penalty: "分数算法很简单：底牌点数 + 按钮分数，高的人赢。",
     moment: "",
     memory: [],
     intimacy: 0,
@@ -3262,9 +3191,9 @@ function setDuelIntimacyChoice(side, choice) {
   const currentName = side === "left" ? state.cards.duel.leftPlayer : state.cards.duel.rightPlayer;
   const action = getIntimacyActionMeta(choice);
   if (game.leftChoice && game.rightChoice) {
-    game.message = `${currentName} 已锁定“${action.label}”。两边都准备好了，点“揭晓这一轮”看看谁先把气氛顶上去。`;
+    game.message = `${currentName} 选了“${action.label}”。两边都选好了，直接点“揭晓结果”就行。`;
   } else {
-    game.message = `${currentName} 已锁定“${action.label}”。现在等另一边选好动作。`;
+    game.message = `${currentName} 选了“${action.label}”。现在等另一边也选一个按钮。`;
   }
   playUiTone("soft");
   renderApp();
@@ -3296,7 +3225,7 @@ function resolveDuelIntimacyRound() {
     winner = leftScore > rightScore ? "left" : "right";
   }
 
-  const tierKey = game.roundNumber >= 6 ? "ignite" : game.roundNumber >= 3 ? "spark" : "warmup";
+  const tierKey = game.roundNumber >= 5 ? "close" : game.roundNumber >= 3 ? "heat" : "warmup";
   const winnerName = winner === "left" ? duel.leftPlayer : duel.rightPlayer;
   const loserName = winner === "left" ? duel.rightPlayer : duel.leftPlayer;
   const moment = pickIntimacyPrompt(game, {
@@ -3319,12 +3248,12 @@ function resolveDuelIntimacyRound() {
   };
   game.message =
     winner === "draw"
-      ? `${matchup.title}。这轮分数相同，算是彼此都接住了。`
-      : `${winnerName} 这轮用“${winner === "left" ? leftAction.label : rightAction.label}”先拿到主动权。`;
+      ? `${matchup.title}。这轮总分一样，所以算平局。`
+      : `${winnerName} 这轮靠“${winner === "left" ? leftAction.label : rightAction.label}”拿下了这一局。`;
   game.penalty =
     winner === "draw"
-      ? "这轮打平，两个人一起小抿一口，再决定做不做下面这条同步互动。"
-      : `${loserName} 先喝一小口，再执行下面这条互动；如果不想做，就直接改喝一口。`;
+      ? "这轮打平，两个人一起喝一小口，再做下面这条双人任务。"
+      : `${loserName} 先喝一小口，再做下面这条任务；如果不想做，就改成再喝一口。`;
   game.moment = moment;
 
   duel.totalRounds += 1;
@@ -5461,6 +5390,9 @@ function renderIntimacyView() {
   const duel = state.cards.duel;
   const game = duel.intimacy;
   const resultTone = game.status === "resolved" && game.winner !== "draw" ? "win" : "neutral";
+  const actionGuide = INTIMACY_ACTION_OPTIONS.map(
+    (item) => `<span class="small-chip"><strong>${item.label}</strong> ${item.detail}</span>`,
+  ).join("");
 
   return `
     <section class="module-layout">
@@ -5469,7 +5401,7 @@ function renderIntimacyView() {
           <div class="panel-header">
             <div>
               <h2 class="section-title">暧昧牌桌</h2>
-              <p>单独开一张双人小桌。流程很简单：发暗牌、双方选动作、一起揭晓，然后执行一条轻互动。</p>
+              <p>这版只保留最简单的流程：发牌、各选一个按钮、一起揭晓，然后做一条小互动。</p>
             </div>
             <div class="button-row">
               <button type="button" class="ghost-btn" data-action="duel-random-players">随机两位</button>
@@ -5501,6 +5433,14 @@ function renderIntimacyView() {
             <button type="button" class="primary-btn" data-action="duel-start-intimacy">${game.status === "choosing" ? "重新发一轮" : "发新一轮"}</button>
             <button type="button" class="secondary-btn" data-action="duel-reveal-intimacy">${game.status === "choosing" ? "揭晓结果" : "查看结果后再开新一轮"}</button>
             <button type="button" class="ghost-btn" data-action="duel-reset-intimacy">重新开始</button>
+          </div>
+
+          <div class="rules-card" style="margin-top: 16px;">
+            <h4>怎么玩</h4>
+            <p>1. 发新一轮后，每个人看不到自己的底牌结果，只需要选一个按钮。</p>
+            <p>2. 系统会用“底牌点数 + 按钮分数”算总分。</p>
+            <p>3. 总分高的人赢；平局就一起喝一口。</p>
+            <div class="chip-row" style="margin-top: 12px;">${actionGuide}</div>
           </div>
         </article>
 
@@ -5542,7 +5482,7 @@ function renderIntimacyView() {
               : `
                 <div class="rules-card" style="margin-top: 16px;">
                   <h4>玩法说明</h4>
-                  <p>每轮只做三件事：发暗牌、各自锁定一个动作、一起揭晓。动作会提供不同加成，底牌决定最终高低，结果只保留一条轻互动任务，不再叠加计时、提示或额外机制。</p>
+                  <p>不用理解什么黑话。你只要把按钮当成四种出牌风格就行：稳一点、直接夸、开玩笑、反问回去。按钮分数会加到底牌上，谁总分高谁赢。</p>
                 </div>
               `
           }
@@ -6357,11 +6297,11 @@ function renderIntimacySeat(side, name, game) {
       <div class="toggle-row">
         <div>
           <strong>${escapeHtml(name)}</strong>
-          <p class="footer-note">${action ? `已锁定：${action.label}` : game.status === "choosing" ? "等待锁定动作" : "发新一轮后再锁动作"}</p>
+          <p class="footer-note">${action ? `已选择：${action.label}` : game.status === "choosing" ? "请选择一个按钮" : "发新一轮后再选"}</p>
         </div>
         ${
           game.status === "resolved" && Number.isFinite(sideScore)
-            ? `<span class="small-chip">牌势 ${sideScore}</span>`
+            ? `<span class="small-chip">总分 ${sideScore}</span>`
             : `<span class="small-chip">${action ? action.short : "待选"}</span>`
         }
       </div>
