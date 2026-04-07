@@ -15,6 +15,7 @@ const VIEW_TITLES = {
   dare: "大冒险",
   tod: "真心话大冒险",
   cards: "纸牌小游戏",
+  intimacy: "暧昧牌桌",
   players: "自定义玩家设置",
 };
 
@@ -55,6 +56,13 @@ const HOME_MODULES = [
     title: "纸牌小游戏",
     description: "七种扑克牌玩法集中在一页，适合多人围着屏幕快速玩。",
     buttonText: "进入纸牌中心",
+  },
+  {
+    route: "intimacy",
+    badge: "暧",
+    title: "暧昧牌桌",
+    description: "双人专属二级页，去掉额外提示和定时功能，只保留选动作、翻牌和结果。",
+    buttonText: "进入纯净牌桌",
   },
   {
     route: "players",
@@ -810,11 +818,6 @@ const DUEL_CARD_MODE_OPTIONS = [
     key: "chasenine",
     label: "红黑博弈局",
     detail: "先看手牌，再押红黑或大小，也能选择加码；命运牌翻开后才见真章。",
-  },
-  {
-    key: "intimacy",
-    label: "暧昧牌桌",
-    detail: "双方暗选试探、直球、拉扯或反撩，再翻底牌结算；心动值越高，任务越会升温。",
   },
 ];
 const DUEL_THEME_OPTIONS = [
@@ -3211,36 +3214,32 @@ function pickIntimacyPrompt(game, context) {
 }
 
 function startDuelIntimacyRound() {
-  prepareDuelRound("暧昧牌桌");
   const previous = state.cards.duel.intimacy;
-  const nextHeat = previous.pendingResetHeat || previous.intimacy;
-  const resetNote = previous.pendingResetHeat ? "上轮终局后，心动值回落到 7 格，这轮继续拉扯。" : "";
   const deck = Array.isArray(previous.deck) && previous.deck.length >= 2 ? previous.deck.slice() : shuffleArray(createDeck());
   const leftCard = drawCardFromDeck(deck);
   const rightCard = drawCardFromDeck(deck);
   state.cards.duel.intimacy = {
     ...createDuelIntimacyState({
       roundNumber: previous.roundNumber + 1,
-      intimacy: nextHeat,
-      memory: previous.memory,
       recentPromptIds: previous.recentPromptIds,
-      finaleCount: previous.finaleCount,
       deck,
     }),
     deck,
     status: "choosing",
     roundNumber: previous.roundNumber + 1,
-    intimacy: nextHeat,
-    pendingResetHeat: 0,
     leftCard,
     rightCard,
     leftChoice: "",
     rightChoice: "",
     winner: "",
     result: null,
-    message: `${resetNote}底牌已经发好，双方先各自锁定动作，再一起揭晓。`,
-    penalty: "这轮先拼气氛再拼胆量，输了的人等揭晓后再执行任务。",
+    message: "底牌已经发好，双方各自选一个动作，选完就能同步揭晓。",
+    penalty: "揭晓后系统只会给出一条轻互动，不叠加额外机制。",
     moment: "",
+    memory: [],
+    intimacy: 0,
+    pendingResetHeat: 0,
+    finaleCount: 0,
   };
   playUiTone("soft");
   renderApp();
@@ -3289,32 +3288,15 @@ function resolveDuelIntimacyRound() {
   const leftAction = getIntimacyActionMeta(game.leftChoice);
   const rightAction = getIntimacyActionMeta(game.rightChoice);
   const matchup = getIntimacyMatchup(game.leftChoice, game.rightChoice);
-  const leftScore = getDuelAdjustedCardValue(game.leftCard) + leftAction.power + matchup.leftBonus + duel.effects.left.flatBonus;
-  const rightScore = getDuelAdjustedCardValue(game.rightCard) + rightAction.power + matchup.rightBonus + duel.effects.right.flatBonus;
-  const difference = Math.abs(leftScore - rightScore);
+  const leftScore = getDuelAdjustedCardValue(game.leftCard) + leftAction.power + matchup.leftBonus;
+  const rightScore = getDuelAdjustedCardValue(game.rightCard) + rightAction.power + matchup.rightBonus;
 
   let winner = "draw";
   if (leftScore !== rightScore) {
     winner = leftScore > rightScore ? "left" : "right";
   }
 
-  let meterGain = matchup.meter + (difference >= 5 ? 2 : difference >= 2 ? 1 : 0);
-  if (winner === "draw") {
-    meterGain += 1;
-  } else {
-    const winnerAction = winner === "left" ? leftAction : rightAction;
-    const loserAction = winner === "left" ? rightAction : leftAction;
-    if (winnerAction.key === "direct") {
-      meterGain += 1;
-    }
-    if (winnerAction.key === "counter" && loserAction.key === "direct") {
-      meterGain += 1;
-    }
-  }
-
-  const heatAfter = Math.min(10, game.intimacy + meterGain);
-  const finaleTriggered = heatAfter >= 10;
-  const tierKey = finaleTriggered ? "finale" : getIntimacyTierMeta(heatAfter).key;
+  const tierKey = game.roundNumber >= 6 ? "ignite" : game.roundNumber >= 3 ? "spark" : "warmup";
   const winnerName = winner === "left" ? duel.leftPlayer : duel.rightPlayer;
   const loserName = winner === "left" ? duel.rightPlayer : duel.leftPlayer;
   const moment = pickIntimacyPrompt(game, {
@@ -3325,19 +3307,8 @@ function resolveDuelIntimacyRound() {
     winner: winner === "draw" ? "" : winnerName,
     loser: winner === "draw" ? "" : loserName,
   });
-  const memoryEntry = buildIntimacyMemoryEntry(game, {
-    winner,
-    leftAction,
-    rightAction,
-    meterGain,
-    matchupTitle: matchup.title,
-  });
-
-  game.memory = [memoryEntry, ...game.memory].slice(0, 6);
   game.status = "resolved";
   game.winner = winner;
-  game.intimacy = heatAfter;
-  game.pendingResetHeat = finaleTriggered ? 7 : 0;
   game.result = {
     leftScore,
     rightScore,
@@ -3345,22 +3316,16 @@ function resolveDuelIntimacyRound() {
     rightAction,
     matchupTitle: matchup.title,
     matchupDetail: matchup.detail,
-    meterGain,
-    heatAfter,
-    finaleTriggered,
   };
   game.message =
     winner === "draw"
-      ? `${matchup.title}。这轮两边都没退，直接把心动值往上推了 ${meterGain} 格。`
-      : `${winnerName} 这轮用“${winner === "left" ? leftAction.label : rightAction.label}”拿到了主动权。${matchup.title}，心动值上升 ${meterGain} 格。`;
+      ? `${matchup.title}。这轮分数相同，算是彼此都接住了。`
+      : `${winnerName} 这轮用“${winner === "left" ? leftAction.label : rightAction.label}”先拿到主动权。`;
   game.penalty =
     winner === "draw"
-      ? `这轮打平，先一起抿一口，再做下面这条同步任务；不想做就一起改喝。${finaleTriggered ? " 另外，终局任务也已经触发。" : ""}`
-      : `${loserName} 先喝 ${finaleTriggered ? 2 : Math.max(1, Math.min(3, 1 + Math.floor(meterGain / 3)))} 口，再做下面这条任务；如果不想做，就直接改喝 ${finaleTriggered ? 3 : 2} 口。`;
+      ? "这轮打平，两个人一起小抿一口，再决定做不做下面这条同步互动。"
+      : `${loserName} 先喝一小口，再执行下面这条互动；如果不想做，就直接改喝一口。`;
   game.moment = moment;
-  if (finaleTriggered) {
-    game.finaleCount += 1;
-  }
 
   duel.totalRounds += 1;
   duel.lastWinner = winner === "draw" ? "" : winner;
@@ -3370,20 +3335,15 @@ function resolveDuelIntimacyRound() {
 
   pushDuelHistory(
     "暧昧牌桌",
-    finaleTriggered ? "心动值冲顶" : winner === "draw" ? "谁都没退的一轮" : `${winnerName} 拿到了主动权`,
+    winner === "draw" ? "双方都接住了" : `${winnerName} 拿到了主动权`,
     `${game.message} ${game.penalty}${game.moment ? ` ${game.moment}` : ""}`,
   );
-  resetDuelRoundEffects();
-  duel.toolkitMessage = finaleTriggered
-    ? "心动值已经冲顶，这轮直接触发终局任务；下一轮会从 7 格继续升温。"
-    : `${winner === "draw" ? "这轮两边都没退。" : `${winnerName} 先把这轮节奏拿走了。`}`;
-  playUiTone(finaleTriggered ? "alert" : winner === "draw" ? "soft" : "success");
+  playUiTone(winner === "draw" ? "soft" : "success");
   renderApp();
 }
 
 function resetDuelIntimacy() {
   state.cards.duel.intimacy = createDuelIntimacyState();
-  resetDuelRoundEffects();
   playUiTone("soft");
   renderApp();
 }
@@ -3759,9 +3719,6 @@ function setDuelTheme(theme) {
 
 function setDuelMode(mode) {
   state.cards.duel.mode = DUEL_CARD_MODE_OPTIONS.some((item) => item.key === mode) ? mode : "showdown";
-  if (state.cards.duel.mode === "intimacy") {
-    state.cards.duel.theme = "couple";
-  }
   playUiTone("soft");
   renderApp();
 }
@@ -4849,6 +4806,8 @@ function setView(nextView) {
     ensureComboReady();
   } else if (nextView === "cards") {
     primeCardGames();
+  } else if (nextView === "intimacy") {
+    syncDuelPlayersWithRoster();
   }
 
   renderApp();
@@ -4902,6 +4861,8 @@ function renderCurrentView(currentView) {
       return renderTruthOrDareView();
     case "cards":
       return renderCardsView();
+    case "intimacy":
+      return renderIntimacyView();
     case "players":
       return renderPlayersView();
     default:
@@ -5496,6 +5457,105 @@ function renderCardsView() {
   `;
 }
 
+function renderIntimacyView() {
+  const duel = state.cards.duel;
+  const game = duel.intimacy;
+  const resultTone = game.status === "resolved" && game.winner !== "draw" ? "win" : "neutral";
+
+  return `
+    <section class="module-layout">
+      <div class="main-stack">
+        <article class="section-card glass-card">
+          <div class="panel-header">
+            <div>
+              <h2 class="section-title">暧昧牌桌</h2>
+              <p>单独开一张双人小桌。流程很简单：发暗牌、双方选动作、一起揭晓，然后执行一条轻互动。</p>
+            </div>
+            <div class="button-row">
+              <button type="button" class="ghost-btn" data-action="duel-random-players">随机两位</button>
+              <button type="button" class="ghost-btn" data-action="duel-swap-players">交换左右</button>
+              <button type="button" class="ghost-btn" data-route="home">返回主页</button>
+            </div>
+          </div>
+
+          <div class="status-grid">
+            <article>
+              <h4>当前回合</h4>
+              <p>${Math.max(1, game.roundNumber || 1)}</p>
+            </article>
+            <article>
+              <h4>${escapeHtml(duel.leftPlayer)}</h4>
+              <p>${duel.score.left} 胜</p>
+            </article>
+            <article>
+              <h4>${escapeHtml(duel.rightPlayer)}</h4>
+              <p>${duel.score.right} 胜</p>
+            </article>
+            <article>
+              <h4>当前状态</h4>
+              <p>${game.status === "choosing" ? "等待揭晓" : game.status === "resolved" ? "已结算" : "等待发牌"}</p>
+            </article>
+          </div>
+
+          <div class="button-row" style="margin-top: 16px;">
+            <button type="button" class="primary-btn" data-action="duel-start-intimacy">${game.status === "choosing" ? "重新发一轮" : "发新一轮"}</button>
+            <button type="button" class="secondary-btn" data-action="duel-reveal-intimacy">${game.status === "choosing" ? "揭晓结果" : "查看结果后再开新一轮"}</button>
+            <button type="button" class="ghost-btn" data-action="duel-reset-intimacy">重新开始</button>
+          </div>
+        </article>
+
+        <article class="section-card glass-card">
+          <div class="duel-versus-row">
+            ${renderIntimacySeat("left", duel.leftPlayer, game)}
+            <div class="duel-vs-pill">同步揭晓</div>
+            ${renderIntimacySeat("right", duel.rightPlayer, game)}
+          </div>
+
+          <div class="result-card intimacy-clean-result" data-tone="${resultTone}" style="margin-top: 16px;">
+            <small>本轮结果</small>
+            <h3>${escapeHtml(game.message)}</h3>
+            <p>${escapeHtml(game.penalty)}</p>
+          </div>
+
+          ${renderDuelMomentCard(game.moment)}
+
+          ${
+            game.result
+              ? `
+                <div class="rules-card" style="margin-top: 16px;">
+                  <h4>揭晓明细</h4>
+                  <div class="rules-list">
+                    ${renderMiniRule(
+                      duel.leftPlayer.slice(0, 2),
+                      `${duel.leftPlayer} · ${game.result.leftAction.label}`,
+                      `${getCardDisplayName(game.leftCard)}，本轮分数 ${game.result.leftScore}。`,
+                    )}
+                    ${renderMiniRule(
+                      duel.rightPlayer.slice(0, 2),
+                      `${duel.rightPlayer} · ${game.result.rightAction.label}`,
+                      `${getCardDisplayName(game.rightCard)}，本轮分数 ${game.result.rightScore}。`,
+                    )}
+                    ${renderMiniRule("局势", game.result.matchupTitle, game.result.matchupDetail)}
+                  </div>
+                </div>
+              `
+              : `
+                <div class="rules-card" style="margin-top: 16px;">
+                  <h4>玩法说明</h4>
+                  <p>每轮只做三件事：发暗牌、各自锁定一个动作、一起揭晓。动作会提供不同加成，底牌决定最终高低，结果只保留一条轻互动任务，不再叠加计时、提示或额外机制。</p>
+                </div>
+              `
+          }
+        </article>
+      </div>
+
+      <aside class="aside-stack">
+        ${renderSwitchGameCard("intimacy")}
+      </aside>
+    </section>
+  `;
+}
+
 function renderCardTabs() {
   const tabs = [
     { key: "lucky", label: "抽鬼牌 / 幸运牌" },
@@ -5766,15 +5826,10 @@ function renderDuelGame() {
   const activeMode = getDuelModeMeta(duel.mode);
   const activeTheme = getDuelThemeMeta(duel.theme);
   const subtitle =
-    duel.mode === "intimacy"
-      ? "这一桌只服务两个人：先暗选、再翻牌，心动值会一轮轮往上推。"
-      : duel.theme === "couple"
-        ? "切到了情侣暧昧版：还是牌局先分胜负，但结算会更有心动感。"
-        : "专门给两个人开的小牌桌：翻牌快、规则直、输赢立刻就能落到酒杯上。";
-  const poolNote =
-    duel.mode === "intimacy"
-      ? `暧昧牌桌分级互动共 ${INTIMACY_PROMPT_COUNT} 条，心动值冲顶后还会触发终局任务。`
-      : `共享互动池共 ${DUEL_COUPLE_MOMENT_POOL.length} 条。`;
+    duel.theme === "couple"
+      ? "这里保留情侣暧昧版，但仍然是常规双人酒牌局。想玩更纯净的双人暧昧流程，请直接从首页进入“暧昧牌桌”。"
+      : "专门给两个人开的常规牌局：翻牌快、规则直、输赢立刻就能落到酒杯上。";
+  const poolNote = `共享互动池共 ${DUEL_COUPLE_MOMENT_POOL.length} 条。`;
   return `
     <div class="main-stack">
       <div class="rules-card duel-hub">
@@ -5963,8 +6018,6 @@ function renderDuelSkillHand(side, name, skills, effects) {
 
 function renderActiveDuelMode() {
   switch (state.cards.duel.mode) {
-    case "intimacy":
-      return renderDuelIntimacy();
     case "tenhalf":
       return renderDuelTenHalf();
     case "chasenine":
@@ -6395,8 +6448,7 @@ function renderDuelMomentCard(moment) {
   }
 
   const duel = state.cards.duel;
-  const label =
-    duel.mode === "intimacy" ? (duel.intimacy.result?.finaleTriggered ? "终局任务" : "本轮任务") : "情侣暧昧版加戏";
+  const label = state.view === "intimacy" ? "本轮互动" : "情侣暧昧版加戏";
 
   return `
     <div class="highlight-box duel-theme-note">
