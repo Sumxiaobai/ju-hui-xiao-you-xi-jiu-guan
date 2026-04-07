@@ -924,6 +924,92 @@ textarea {
   color: #ffd7e4;
 }
 
+.intimacy-heat-card {
+  border-color: rgba(255, 143, 173, 0.18);
+  background: linear-gradient(135deg, rgba(255, 143, 173, 0.08), rgba(242, 179, 107, 0.08));
+}
+
+.intimacy-meter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.intimacy-meter {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.intimacy-meter-seg {
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.intimacy-meter-seg.active {
+  background: linear-gradient(90deg, rgba(255, 143, 173, 0.92), rgba(242, 179, 107, 0.92));
+  box-shadow: 0 0 18px rgba(255, 143, 173, 0.2);
+}
+
+.intimacy-meter-value {
+  min-width: 70px;
+  color: #ffe7d0;
+  font-size: 1rem;
+  text-align: right;
+}
+
+.intimacy-seat {
+  gap: 16px;
+}
+
+.intimacy-card-row {
+  justify-content: center;
+}
+
+.intimacy-hidden-card {
+  color: #ffe2ea;
+  border-color: rgba(255, 143, 173, 0.22);
+  background: linear-gradient(135deg, rgba(255, 143, 173, 0.12), rgba(255, 255, 255, 0.06));
+}
+
+.intimacy-action-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.intimacy-action-card {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.intimacy-action-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 143, 173, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.intimacy-action-card.active {
+  border-color: rgba(255, 143, 173, 0.28);
+  background: linear-gradient(135deg, rgba(255, 143, 173, 0.16), rgba(242, 179, 107, 0.08));
+  box-shadow: 0 10px 24px rgba(255, 143, 173, 0.08);
+}
+
 .duel-event-card {
   margin-top: 16px;
   border-color: rgba(242, 179, 107, 0.24);
@@ -1161,7 +1247,8 @@ textarea {
 
   .duel-player-grid,
   .duel-versus-row,
-  .duel-skill-board {
+  .duel-skill-board,
+  .intimacy-action-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
