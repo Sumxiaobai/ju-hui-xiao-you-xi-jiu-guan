@@ -924,6 +924,54 @@ textarea {
   color: #ffd7e4;
 }
 
+.duel-event-card {
+  margin-top: 16px;
+  border-color: rgba(242, 179, 107, 0.24);
+  background: linear-gradient(135deg, rgba(242, 179, 107, 0.14), rgba(255, 133, 95, 0.08));
+}
+
+.duel-skill-board {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.duel-skill-hand {
+  gap: 12px;
+}
+
+.duel-skill-list {
+  margin-top: 0;
+}
+
+.duel-skill-card {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.duel-skill-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(242, 179, 107, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.duel-bet-panel .filter-row {
+  margin-top: 10px;
+}
+
+.duel-bet-toggle.active {
+  border-color: rgba(255, 133, 95, 0.28);
+  background: linear-gradient(135deg, rgba(255, 133, 95, 0.18), rgba(242, 179, 107, 0.12));
+  color: #ffe7d0;
+}
+
 .footer-note {
   margin-top: 10px;
   color: var(--text-muted);
@@ -1112,7 +1160,8 @@ textarea {
   }
 
   .duel-player-grid,
-  .duel-versus-row {
+  .duel-versus-row,
+  .duel-skill-board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

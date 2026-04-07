@@ -798,18 +798,18 @@ const BIG_SISTER_RULE_ORDER = ["K", "Q", "J", "A", "10", "9", "8", "7", "6", "5"
 const DUEL_CARD_MODE_OPTIONS = [
   {
     key: "showdown",
-    label: "对抽比大小",
-    detail: "两边同时翻牌，比大小，平手就立刻加码再翻。",
+    label: "快抽决斗",
+    detail: "先亮开一对牌，再决定要不要动技能，最后比大小；平手会自动加码继续翻。",
   },
   {
     key: "tenhalf",
-    label: "十点半对酌",
-    detail: "轮流要牌或停牌，谁更接近 10 点半谁赢，五张不断牌直接吃满气势。",
+    label: "心动梭哈",
+    detail: "两边拿公开手牌和共享牌，可补牌、弃换或锁牌，最后比三张组合和牌势。",
   },
   {
     key: "chasenine",
-    label: "三张抢九",
-    detail: "各发三张取个位数，比点数也比气势，适合快节奏来一局。",
+    label: "红黑博弈局",
+    detail: "先看手牌，再押红黑或大小，也能选择加码；命运牌翻开后才见真章。",
   },
 ];
 const DUEL_THEME_OPTIONS = [
@@ -824,30 +824,149 @@ const DUEL_THEME_OPTIONS = [
     detail: "每轮输赢后会附带轻暧昧互动，默认双方愿意为先，不想做就改喝。",
   },
 ];
-const DUEL_COUPLE_MOMENTS = {
-  showdown: [
-    ({ winner, loser }) => `${loser} 看着 ${winner} 说一句“你这把赢得有点会”，再和对方轻碰一下杯。`,
-    ({ winner, loser }) => `${loser} 任选“和 ${winner} 肩膀轻靠 5 秒”或“夸 ${winner} 今天一个最加分的地方”；不想做就改喝一口。`,
-    ({ winner, loser }) => `${winner} 选择“对视 3 秒”或“手背轻碰一下”，由 ${loser} 接这一条。`,
-    ({ winner, loser }) => `${loser} 把下一口酒递到 ${winner} 手边，再说一句“下一把别放水”。`,
+const DUEL_COUPLE_MOMENT_LIBRARY = {
+  winner: [
+    "经 {winner} 同意后，{loser} 用食指轻轻戳一下 {winner} 的脸颊，笑着说一句“超可爱”。",
+    "征得 {winner} 同意后，{loser} 侧脸轻轻贴一下 {winner} 的肩膀，保持 3 秒后自然离开。",
+    "经 {winner} 允许，{loser} 用手掌轻轻覆在 {winner} 的手背上，停留 5 秒再移开。",
+    "征得同意后，{loser} 凑到 {winner} 耳边轻声说一句话，说完轻轻碰一下对方耳垂；不想做就改喝。",
+    "经双方同意，{loser} 和 {winner} 额头轻碰，闭眼保持 4 秒后分开。",
+    "征得允许后，{loser} 用手指轻轻刮一下 {winner} 的鼻子，动作轻一点就好。",
+    "经 {winner} 同意后，{loser} 挽着 {winner} 的胳膊一起走 5 步，中途不松开。",
+    "征得 {winner} 同意后，{loser} 用下巴轻轻抵一下 {winner} 的头顶，保持 3 秒后抬头。",
+    "经 {winner} 允许后，{loser} 和对方交叠手腕，停留 5 秒后同时放下。",
+    "征得同意后，{loser} 轻轻捏一下 {winner} 的手指肚，每根手指轻捏一下即可；不想做就改喝。",
+    "{loser} 盯着 {winner} 的眼睛，认真说：“刚看你半天，忍不住想夸你好看。”",
+    "{loser} 用软一点的语气对 {winner} 说：“你怎么这么招人喜欢呀，犯规了。”",
+    "{loser} 正经看着 {winner} 说：“发现个事，你笑起来的时候我心会跳快一点。”",
+    "{loser} 用委屈的小语气对 {winner} 说：“都怪你，害得我老忍不住看你。”",
+    "{loser} 认真对 {winner} 说：“今天的你，比昨天更让我心动了。”",
+    "{loser} 用轻快的语气对 {winner} 说：“完了，我好像被你的颜值拿捏了。”",
+    "{loser} 盯着 {winner} 3 秒，笑着说：“你是不是偷偷开了颜值滤镜，也太好看了。”",
+    "{loser} 用撒娇语气对 {winner} 说：“就要你陪我，别人陪我都不开心。”",
+    "{loser} 认真对 {winner} 说：“跟你待在一起，连空气都变甜了。”",
+    "{loser} 用偏夹子一点的语气说：“你怎么能这么温柔呀，我都沦陷啦。”",
+    "{loser} 轻轻拍一下 {winner} 的胳膊，笑着说：“捡到一个超好看的宝。”",
+    "{loser} 用手指先指一下 {winner}，再指一下自己，说：“我的眼里只有你。”",
+    "{loser} 走到 {winner} 身边，轻轻哼一句甜一点的歌，只唱给对方听。",
+    "{loser} 轻轻敲一下 {winner} 面前的桌子，笑着说：“这位同学，你颜值超标了。”",
+    "{loser} 用手掌对着 {winner} 做一个“捧脸”的虚动作，笑着说：“这么好看的脸，好想rua。”",
+    "{loser} 看着 {winner} 说一句：“你这把赢得有点会。”再和对方轻碰一下杯。",
+    "{loser} 把下一口酒递到 {winner} 手边，再看着对方说一句“下一把别放水”。",
+    "{loser} 用五个字夸一下 {winner}，例如“今天状态超好”；卡壳就改喝。",
+    "{loser} 主动给 {winner} 倒下一口饮料，再补一句：“这把我认输，但下把不一定。”",
+    "{loser} 对 {winner} 说一句今天最想和对方一起做的小事，越具体越好。",
+    "{loser} 认真对 {winner} 说：“如果今晚只能夸你一句，我会夸你太会让人心动。”",
+    "{loser} 和 {winner} 对视 3 秒后，说一句“你今天真的有点会蛊人”。",
+    "经 {winner} 同意后，{loser} 帮对方整理一下衣领或一缕头发，动作轻一点就好。",
+    "征得同意后，{loser} 帮 {winner} 整理一下袖口，再说一句“你这样真的挺迷人”。",
+    "{loser} 先和 {winner} 轻碰一下拳头，再碰杯，说一句“这把输得心服口也服”。",
+    "{loser} 对着 {winner} 比一个心，让对方回一个心，保持 3 秒后结束。",
+    "经 {winner} 同意后，{loser} 和对方手背轻轻碰一下，说一句“先存个好运，下把我再来”。",
+    "{loser} 和 {winner} 约定好同时比出“耶”的手势，保持 3 秒再放下。",
+    "{loser} 靠近 {winner} 一点，用很轻的声音说：“今天真想一直坐你旁边。”",
+    "{loser} 认真看着 {winner} 说：“你一出现，我的注意力就有点不受控。”",
+    "{loser} 用一个软一点的前缀叫一次 {winner} 的昵称，比如“小”“乖”“宝”，不想做就改喝。",
+    "{loser} 对 {winner} 说：“你看起来很适合被偏爱。”说完自己先不好意思一下。",
+    "{loser} 轻轻晃一下杯子，对 {winner} 说：“跟你碰杯都像加了甜度。”",
+    "{loser} 用电影旁白一样的语气夸 {winner} 一次，越认真越好笑。",
+    "{loser} 把手放在自己胸口，看着 {winner} 说：“你刚刚那一下，真让我心动了一点。”",
+    "{loser} 对 {winner} 说：“别笑了，你一笑我就更容易输。”",
+    "经 {winner} 同意后，{loser} 和对方手臂外侧轻轻贴一下，保持 3 秒即可。",
+    "征得同意后，{loser} 和 {winner} 肩并肩靠一下，数 5 秒后自然分开。",
+    "经双方同意，{loser} 用小拇指轻轻勾一下 {winner} 的小拇指，停两秒就松开。",
+    "征得同意后，{loser} 和 {winner} 指尖轻轻碰一下，停 3 秒后分开。",
+    "{loser} 用认真语气对 {winner} 说：“你今天真的很耐看，越看越上头。”",
+    "{loser} 看着 {winner} 说：“我已经想好下一把赢了也想继续选你。”",
+    "{loser} 用委屈一点的语气说：“你这样真的很难让我继续装淡定。”",
+    "{loser} 对 {winner} 说一句：“你今天有点会勾人，我先认栽。”",
+    "{winner} 给 {loser} 出一道轻暧昧小题：回答“你觉得我今天最有感觉的点是什么？”",
+    "{loser} 看着 {winner} 说：“我有点想把好运都分你一半，然后把你留我旁边。”",
+    "经双方同意，{loser} 和 {winner} 额头轻碰一下，再说一句“这把我认栽，但你真的可爱”。",
+    "{loser} 往 {winner} 那边靠近半步，说一句“你离近一点更犯规”。",
+    "{loser} 对 {winner} 说：“你一认真看我，我就很难不心软。”",
+    "经双方同意，{loser} 摊开掌心给 {winner} 轻点一下，再说“借我一点你的好运”。",
+    "{loser} 对着 {winner} 做个鬼脸，然后马上收回表情说：“但还是你赢得更好看。”",
+    "{loser} 看着 {winner} 说：“你要是再这样看我，我真的会误会。”",
+    "{loser} 用低一点的声音说：“你今天属于越看越上头型。”",
+    "{loser} 对 {winner} 说：“如果现在有心动值，你应该已经超标了。”",
+    "经 {winner} 同意后，{loser} 轻轻碰一下对方手腕，说一句“把好运借我一点，下把我追你”。",
+    "{loser} 看着 {winner} 说：“别太好看，聚会容易让我分心。”",
+    "{loser} 笑着对 {winner} 说：“这把输给你，我竟然有点甘心。”",
+    "{loser} 闭上眼，让 {winner} 轻声说一句话，然后自己复述出来，复述错了就改喝。",
+    "经双方同意，{loser} 和 {winner} 把杯子轻轻贴近停 3 秒，再一起放下。",
+    "{loser} 对 {winner} 说：“你现在要是再夸我一句，我可能真的会开心很久。”",
+    "{loser} 和 {winner} 同步做一个爱心手势，再说一句“这把就当心动加赛”。",
+    "{loser} 看着 {winner} 说：“你今天这种状态，很难让我不站你这边。”",
+    "{loser} 对 {winner} 说：“你坐在我旁边的时候，我真的会更想赢给你看。”",
+    "{loser} 盯着 {winner} 的眼睛三秒，然后说：“你这样看人，真的很容易让人乱套。”",
+    "征得同意后，{loser} 轻轻和 {winner} 碰一下肩，再说一句“这把算你把我拿捏住了”。",
+    "{loser} 用最轻的声音叫一次 {winner} 的名字，然后补一句“叫完更心动了”。",
+    "{loser} 对 {winner} 说：“你刚刚赢的时候那个表情，我会记一会儿。”",
+    "{loser} 主动向 {winner} 靠近一点，说：“先让我近距离看看你今天到底哪里这么好看。”",
+    "{loser} 对 {winner} 说：“要是这桌只能选一个人继续玩，我大概率还会选你。”",
+    "{loser} 看着 {winner} 说：“我现在有点分不清，是输牌上头，还是看你上头。”",
   ],
-  tenhalf: [
-    ({ winner, loser }) => `${loser} 任选“用偏宠的语气叫一次 ${winner} 的昵称”或“认真说一句心动夸夸”；不想做就改喝两小口。`,
-    ({ winner, loser }) => `${winner} 出一个轻暧昧小题：让 ${loser} 回答“你觉得我今天最有感觉的点是什么”。`,
-    ({ winner, loser }) => `${loser} 和 ${winner} 轻轻碰一下额头或碰一下肩，再说一句“这把你赢得挺稳”。`,
-    ({ winner, loser }) => `${winner} 决定“靠近一点说悄悄话 3 秒”还是“互说第一印象”，${loser} 二选一。`,
-  ],
-  chasenine: [
-    ({ winner, loser }) => `${loser} 用五个字夸一下 ${winner}，例如“今天状态超好”；卡壳就喝一口。`,
-    ({ winner, loser }) => `${winner} 指定一个轻互动：碰杯三次、手背轻碰一下，或靠近说一句“下一把继续”。`,
-    ({ winner, loser }) => `${loser} 主动给 ${winner} 倒下一口饮料，再补一句“这把我认输，但下把不一定”。`,
-    ({ winner, loser }) => `${loser} 任选“盯着 ${winner} 的眼睛 3 秒”或“说一句今天最想和对方一起做的小事”。`,
-  ],
-  draw: [
-    ({ left, right }) => `${left} 和 ${right} 一起碰杯，并同时说出对方今天最顺眼的一点。`,
-    ({ left, right }) => `${left} 和 ${right} 二选一：对视 3 秒，或者互相用一句话总结对方今晚的气质。`,
+  pair: [
+    "{left} 和 {right} 一起碰杯，并同时说出对方今天最顺眼的一点。",
+    "{left} 和 {right} 二选一：对视 3 秒，或者互相用一句话总结对方今晚的气质。",
+    "{left} 和 {right} 同时比一个心，再互相说一句“这把先算你也可爱”。",
+    "{left} 和 {right} 同时说出对方身上一个最想夸的细节，谁先卡壳谁喝。",
+    "经双方同意，{left} 和 {right} 额头轻碰 3 秒；如果不想做，就一起碰杯小抿一口。",
+    "{left} 和 {right} 同时用一句话回答：“如果今晚只夸对方一句，我会夸什么？”",
+    "经双方同意，{left} 和 {right} 手背轻轻碰一下，停留 5 秒后再松开。",
+    "{left} 和 {right} 同时用五个字形容对方今天的气质，谁先想不出来谁喝。",
+    "{left} 和 {right} 同步比一个“耶”，保持 3 秒，再一起说“请继续保持好看”。",
+    "{left} 和 {right} 互相指一下对方，再指一下自己，同时说一句“我看到了”。",
+    "{left} 和 {right} 一起闭眼 3 秒后同时睁眼，谁先笑出声谁喝。",
+    "{left} 和 {right} 一起哼同一句甜一点的歌，谁先忘词谁喝。",
+    "{left} 和 {right} 互相给对方起一个今天限定的小昵称，叫一次就算完成。",
+    "{left} 和 {right} 先碰拳再碰杯，一起说一句“心动加一，比赛继续”。",
+    "{left} 和 {right} 各用一句话回答对方给自己的第一眼印象。",
+    "{left} 和 {right} 一起比爱心手，保持 4 秒后再自然放下。",
+    "{left} 和 {right} 同时说出一个最想让对方坐的位置，正常答案应该是“我旁边”。",
+    "{left} 和 {right} 一起盯着对方的鼻尖 3 秒，谁先笑谁输。",
+    "{left} 和 {right} 把手掌隔空对着彼此，停 4 秒，再说一句“今天信号接通”。",
+    "{left} 和 {right} 把杯子递到对方手边再换回来，最后一起碰一下杯。",
+    "{left} 和 {right} 各说一个自己觉得对方最柔和的瞬间。",
+    "{left} 和 {right} 现在立刻二选一：肩并肩靠 3 秒，或者对视 3 秒。",
+    "{left} 和 {right} 先做一个鬼脸，再一起恢复正常表情看着对方 3 秒。",
+    "{left} 和 {right} 一起轻敲桌面，说一句“颜值超标组到齐”。",
+    "{left} 和 {right} 一起回答：“今天最想听对方说的一句话是什么？”",
+    "{left} 和 {right} 用同样句式夸一下对方，比如“你一笑，我就……”。",
+    "{left} 和 {right} 用最轻的声音各叫一次对方名字，谁先害羞谁喝。",
+    "{left} 和 {right} 碰杯后同时说一句“下一把继续心动”。",
+    "{left} 和 {right} 互相帮对方整理一下衣领或袖口，然后各夸一句。",
+    "{left} 和 {right} 从“比心”“碰拳”“对视”里现场选一个共同动作，完成就过。",
+    "{left} 和 {right} 一起说一句：“如果今晚要拍合照，我想站你旁边。”",
+    "{left} 和 {right} 各回答：“你刚刚哪一瞬间最好看？”",
   ],
 };
+const DUEL_COUPLE_MOMENT_POOL = [
+  ...DUEL_COUPLE_MOMENT_LIBRARY.winner.map((text, index) => ({ id: `cw-${String(index + 1).padStart(3, "0")}`, scope: "winner", text })),
+  ...DUEL_COUPLE_MOMENT_LIBRARY.pair.map((text, index) => ({ id: `cp-${String(index + 1).padStart(3, "0")}`, scope: "pair", text })),
+];
+const DUEL_EVENT_CARDS = [
+  { id: "event-red", title: "红牌顺风", detail: "本轮所有红牌牌力 +1。", key: "redBoost" },
+  { id: "event-black", title: "黑牌顺风", detail: "本轮所有黑牌牌力 +1。", key: "blackBoost" },
+  { id: "event-face", title: "人头牌上镜", detail: "本轮 J / Q / K 牌力额外 +2。", key: "faceBoost" },
+  { id: "event-low", title: "小牌翻身", detail: "本轮 2 到 5 的牌力额外 +2。", key: "lowBoost" },
+  { id: "event-ace", title: "A 牌热手", detail: "本轮 A 牌额外 +2。", key: "aceBoost" },
+  { id: "event-sip-plus", title: "气氛加码", detail: "本轮经典惩罚额外 +1 口。", key: "sipPlus" },
+  { id: "event-sip-minus", title: "留情一手", detail: "本轮经典惩罚 -1 口，最低仍是 1 口。", key: "sipMinus" },
+  { id: "event-shared", title: "共享牌发光", detail: "心动梭哈里如果共享牌进最佳组合，牌势会更强。", key: "sharedBoost" },
+  { id: "event-pair", title: "对子有面", detail: "心动梭哈里对子会额外抬一档。", key: "pairBoost" },
+  { id: "event-risk", title: "孤注一掷", detail: "红黑博弈局里加码成功会再多赚 1 口。", key: "riskBoost" },
+];
+const DUEL_SKILL_CARDS = [
+  { id: "skill-power", title: "加倍王牌", detail: "本轮如果你赢，输家额外 +1 口。", key: "power" },
+  { id: "skill-shield", title: "缓冲垫", detail: "本轮如果你输，自己少喝 1 口。", key: "shield" },
+  { id: "skill-flat", title: "稳牌加持", detail: "本轮你的牌势结算额外 +1。", key: "flatBonus" },
+  { id: "skill-event", title: "命运重洗", detail: "立刻换一张新的事件牌。", key: "rerollEvent" },
+  { id: "skill-peek", title: "偷看牌顶", detail: "查看当前牌堆顶牌，方便判断下一步。", key: "peekTop" },
+  { id: "skill-self", title: "换掉最小牌", detail: "把自己当前最弱的一张可见牌换掉。", key: "refreshSelf" },
+  { id: "skill-opp", title: "拆掉最大牌", detail: "把对方当前最强的一张可见牌换掉。", key: "refreshOpponent" },
+];
 const SUIT_PRIORITY = {
   "♠": 4,
   "♥": 3,
@@ -1139,10 +1258,18 @@ function createDuelGame(previous = {}) {
     theme: DUEL_THEME_OPTIONS.some((item) => item.key === previous.theme) ? previous.theme : "classic",
     leftPlayer,
     rightPlayer,
+    eventDeck: Array.isArray(previous.eventDeck) && previous.eventDeck.length ? previous.eventDeck : shuffleArray([...DUEL_EVENT_CARDS]),
+    currentEvent: previous.currentEvent || null,
+    skillDeck: Array.isArray(previous.skillDeck) && previous.skillDeck.length ? previous.skillDeck : shuffleArray([...DUEL_SKILL_CARDS, ...DUEL_SKILL_CARDS]),
+    leftSkills: Array.isArray(previous.leftSkills) ? previous.leftSkills.slice(0, 3) : [],
+    rightSkills: Array.isArray(previous.rightSkills) ? previous.rightSkills.slice(0, 3) : [],
+    effects: createDuelEffects(previous.effects),
+    toolkitMessage: previous.toolkitMessage || "每轮先看事件牌，再决定技能怎么用，会比单纯翻牌更有反转。",
     score: {
       left: Number.isFinite(previous.score?.left) ? Math.max(0, previous.score.left) : 0,
       right: Number.isFinite(previous.score?.right) ? Math.max(0, previous.score.right) : 0,
     },
+    recentMomentIds: Array.isArray(previous.recentMomentIds) ? previous.recentMomentIds.slice(0, 18) : [],
     totalRounds: Number.isFinite(previous.totalRounds) ? Math.max(0, previous.totalRounds) : 0,
     lastWinner: ["left", "right"].includes(previous.lastWinner) ? previous.lastWinner : "",
     history: Array.isArray(previous.history) ? previous.history.slice(0, 6) : [],
@@ -1152,11 +1279,29 @@ function createDuelGame(previous = {}) {
   };
 }
 
+function createDuelEffects(previous = {}) {
+  return {
+    left: createDuelSideEffects(previous.left),
+    right: createDuelSideEffects(previous.right),
+  };
+}
+
+function createDuelSideEffects(previous = {}) {
+  return {
+    bonusSip: Number.isFinite(previous.bonusSip) ? previous.bonusSip : 0,
+    shieldSip: Number.isFinite(previous.shieldSip) ? previous.shieldSip : 0,
+    flatBonus: Number.isFinite(previous.flatBonus) ? previous.flatBonus : 0,
+    peekCard: previous.peekCard || "",
+  };
+}
+
 function createDuelShowdownState(previous = {}) {
   return {
     deck: Array.isArray(previous.deck) && previous.deck.length ? previous.deck : shuffleArray(createDeck()),
+    currentPair: previous.currentPair || null,
+    stage: ["idle", "ready", "resolved"].includes(previous.stage) ? previous.stage : "idle",
     battle: Array.isArray(previous.battle) ? previous.battle.slice(0, 5) : [],
-    message: previous.message || "点击“翻一轮”，两边同时亮牌；如果点数相同，就继续加码翻下一对。",
+    message: previous.message || "先发起一轮，亮开双方第一张牌，再决定要不要动技能。",
     penalty: previous.penalty || "输家喝一小口，平手加码时每多翻一次就多加一口。",
     moment: previous.moment || "",
     winner: ["left", "right"].includes(previous.winner) ? previous.winner : "",
@@ -1166,15 +1311,21 @@ function createDuelShowdownState(previous = {}) {
 function createDuelTenHalfState(previous = {}) {
   return {
     deck: Array.isArray(previous.deck) && previous.deck.length ? previous.deck : shuffleArray(createDeck()),
+    centerCards: Array.isArray(previous.centerCards) ? previous.centerCards.slice(0, 1) : [],
     leftCards: Array.isArray(previous.leftCards) ? previous.leftCards.slice(0, 5) : [],
     rightCards: Array.isArray(previous.rightCards) ? previous.rightCards.slice(0, 5) : [],
-    leftStanding: Boolean(previous.leftStanding),
-    rightStanding: Boolean(previous.rightStanding),
+    leftLocked: Boolean(previous.leftLocked),
+    rightLocked: Boolean(previous.rightLocked),
+    leftDrew: Boolean(previous.leftDrew),
+    rightDrew: Boolean(previous.rightDrew),
+    leftSwapped: Boolean(previous.leftSwapped),
+    rightSwapped: Boolean(previous.rightSwapped),
     turn: ["left", "right"].includes(previous.turn) ? previous.turn : "left",
     started: Boolean(previous.started),
     finished: Boolean(previous.finished),
     winner: ["left", "right", "draw"].includes(previous.winner) ? previous.winner : "",
-    message: previous.message || "发新一局后，两边轮流决定要牌还是停牌，越接近 10 点半越稳。",
+    result: previous.result || null,
+    message: previous.message || "发新一局后，两边会先拿 2 张公开手牌和 1 张共享牌，再决定补牌、弃换还是锁牌。",
     penalty: previous.penalty || "这一局默认按点数结算，输家喝一小口。",
     moment: previous.moment || "",
   };
@@ -1183,10 +1334,18 @@ function createDuelTenHalfState(previous = {}) {
 function createDuelChaseNineState(previous = {}) {
   return {
     deck: Array.isArray(previous.deck) && previous.deck.length ? previous.deck : shuffleArray(createDeck()),
-    leftCards: Array.isArray(previous.leftCards) ? previous.leftCards.slice(0, 3) : [],
-    rightCards: Array.isArray(previous.rightCards) ? previous.rightCards.slice(0, 3) : [],
+    leftCards: Array.isArray(previous.leftCards) ? previous.leftCards.slice(0, 2) : [],
+    rightCards: Array.isArray(previous.rightCards) ? previous.rightCards.slice(0, 2) : [],
+    fateCard: previous.fateCard || null,
+    leftBet: previous.leftBet || "",
+    rightBet: previous.rightBet || "",
+    leftRisk: Boolean(previous.leftRisk),
+    rightRisk: Boolean(previous.rightRisk),
+    started: Boolean(previous.started),
+    finished: Boolean(previous.finished),
+    result: previous.result || null,
     winner: ["left", "right"].includes(previous.winner) ? previous.winner : "",
-    message: previous.message || "点击“发三张”，两边各拿 3 张牌，取个位数决定胜负。",
+    message: previous.message || "发新一局后，先看各自的 2 张牌，再决定押红黑还是大小，要不要顺手加码。",
     penalty: previous.penalty || "输家喝一小口；如果差值大于等于 4，可以再补一句胜者指定的祝酒词。",
     moment: previous.moment || "",
   };
@@ -1374,6 +1533,7 @@ function primeCardGames() {
     drawBigSisterCard({ render: false });
   }
   syncDuelPlayersWithRoster();
+  ensureDuelToolkit();
 }
 
 function buildBank(source, prefix) {
@@ -2029,7 +2189,15 @@ function deserializeDuelState(rawDuel, fallbackDuel) {
     theme: rawDuel?.theme || fallbackDuel.theme,
     leftPlayer: rawDuel?.leftPlayer || fallbackDuel.leftPlayer,
     rightPlayer: rawDuel?.rightPlayer || fallbackDuel.rightPlayer,
+    eventDeck: rawDuel?.eventDeck || fallbackDuel.eventDeck,
+    currentEvent: rawDuel?.currentEvent || fallbackDuel.currentEvent,
+    skillDeck: rawDuel?.skillDeck || fallbackDuel.skillDeck,
+    leftSkills: rawDuel?.leftSkills || fallbackDuel.leftSkills,
+    rightSkills: rawDuel?.rightSkills || fallbackDuel.rightSkills,
+    effects: rawDuel?.effects || fallbackDuel.effects,
+    toolkitMessage: rawDuel?.toolkitMessage || fallbackDuel.toolkitMessage,
     score: rawDuel?.score || fallbackDuel.score,
+    recentMomentIds: Array.isArray(rawDuel?.recentMomentIds) ? rawDuel.recentMomentIds : fallbackDuel.recentMomentIds,
     totalRounds: rawDuel?.totalRounds ?? fallbackDuel.totalRounds,
     lastWinner: rawDuel?.lastWinner || fallbackDuel.lastWinner,
     history: Array.isArray(rawDuel?.history) ? rawDuel.history : fallbackDuel.history,
@@ -2336,10 +2504,31 @@ function getDuelModeMeta(modeKey) {
   return DUEL_CARD_MODE_OPTIONS.find((item) => item.key === modeKey) || DUEL_CARD_MODE_OPTIONS[0];
 }
 
-function pickDuelCoupleMoment(modeKey, context) {
-  const pool = DUEL_COUPLE_MOMENTS[modeKey] || [];
-  const template = pickRandom(pool);
-  return template ? template(context) : "";
+function renderDuelMomentText(template, context) {
+  return template
+    .replaceAll("{winner}", context.winner || context.left || "")
+    .replaceAll("{loser}", context.loser || context.right || "")
+    .replaceAll("{left}", context.left || context.winner || "")
+    .replaceAll("{right}", context.right || context.loser || "");
+}
+
+function pickDuelCoupleMoment(context) {
+  const pool = context.draw
+    ? DUEL_COUPLE_MOMENT_POOL.filter((item) => item.scope === "pair")
+    : DUEL_COUPLE_MOMENT_POOL;
+  if (!pool.length) {
+    return "";
+  }
+
+  const recentIds = state.cards.duel.recentMomentIds || [];
+  const filteredPool = pool.filter((item) => !recentIds.includes(item.id));
+  const selected = pickRandom(filteredPool.length ? filteredPool : pool);
+  if (!selected) {
+    return "";
+  }
+
+  state.cards.duel.recentMomentIds = [selected.id, ...recentIds.filter((id) => id !== selected.id)].slice(0, 18);
+  return renderDuelMomentText(selected.text, context);
 }
 
 function buildDuelThemeOutcome(modeKey, context, classicPenalty) {
@@ -2355,8 +2544,395 @@ function buildDuelThemeOutcome(modeKey, context, classicPenalty) {
       context.draw
         ? "这局打平，先一起小抿一口；如果想继续走暧昧版，就做下面这条互动。任何一方不想做都可以直接改喝。"
         : `${context.loser} 先喝一小口热热场；如果想走情侣暧昧版，就做下面这条互动。任何一方不想做都可以直接改喝。`,
-    moment: pickDuelCoupleMoment(modeKey, context),
+    moment: pickDuelCoupleMoment(context),
   };
+}
+
+function ensureDuelToolkit(options = {}) {
+  const { render = false } = options;
+  if (!state.cards.duel.currentEvent) {
+    drawNextDuelEvent({ render: false });
+  }
+  refillDuelSkills("left", { render: false });
+  refillDuelSkills("right", { render: false });
+  if (render) {
+    renderApp();
+  }
+}
+
+function resetDuelRoundEffects() {
+  state.cards.duel.effects = createDuelEffects();
+}
+
+function drawNextDuelEvent(options = {}) {
+  const { render = true } = options;
+  if (!state.cards.duel.eventDeck.length) {
+    state.cards.duel.eventDeck = shuffleArray([...DUEL_EVENT_CARDS]);
+  }
+  state.cards.duel.currentEvent = state.cards.duel.eventDeck.pop();
+  state.cards.duel.toolkitMessage = `本轮事件牌：${state.cards.duel.currentEvent.title}。${state.cards.duel.currentEvent.detail}`;
+  if (render) {
+    renderApp();
+  }
+}
+
+function drawDuelSkillCard() {
+  if (!state.cards.duel.skillDeck.length) {
+    state.cards.duel.skillDeck = shuffleArray([...DUEL_SKILL_CARDS, ...DUEL_SKILL_CARDS]);
+  }
+  return state.cards.duel.skillDeck.pop();
+}
+
+function refillDuelSkills(side, options = {}) {
+  const { render = true } = options;
+  const handKey = side === "left" ? "leftSkills" : "rightSkills";
+  while (state.cards.duel[handKey].length < 2) {
+    const nextSkill = drawDuelSkillCard();
+    if (!nextSkill) {
+      break;
+    }
+    state.cards.duel[handKey].push(nextSkill);
+  }
+  if (render) {
+    renderApp();
+  }
+}
+
+function prepareDuelRound(modeLabel) {
+  resetDuelRoundEffects();
+  drawNextDuelEvent({ render: false });
+  refillDuelSkills("left", { render: false });
+  refillDuelSkills("right", { render: false });
+  state.cards.duel.toolkitMessage = `${modeLabel} 已开桌。先看看事件牌，再决定技能要不要先交。`;
+}
+
+function getCurrentDuelModeState() {
+  switch (state.cards.duel.mode) {
+    case "tenhalf":
+      return state.cards.duel.tenHalf;
+    case "chasenine":
+      return state.cards.duel.chaseNine;
+    default:
+      return state.cards.duel.showdown;
+  }
+}
+
+function drawCardFromDuelModeDeck(modeKey = state.cards.duel.mode) {
+  const game =
+    modeKey === "tenhalf" ? state.cards.duel.tenHalf : modeKey === "chasenine" ? state.cards.duel.chaseNine : state.cards.duel.showdown;
+  return drawCardFromDeck(game.deck);
+}
+
+function drawCardFromDeck(deck) {
+  if (!Array.isArray(deck)) {
+    return null;
+  }
+  if (!deck.length) {
+    deck.push(...shuffleArray(createDeck()));
+  }
+  return deck.pop();
+}
+
+function getDuelAdjustedCardValue(card) {
+  if (!card) {
+    return 0;
+  }
+
+  let value = card.value;
+  const eventKey = state.cards.duel.currentEvent?.key;
+  if (eventKey === "redBoost" && card.color === "red") {
+    value += 1;
+  } else if (eventKey === "blackBoost" && card.color === "black") {
+    value += 1;
+  } else if (eventKey === "faceBoost" && ["J", "Q", "K"].includes(card.rank)) {
+    value += 2;
+  } else if (eventKey === "lowBoost" && Number(card.rank) >= 2 && Number(card.rank) <= 5) {
+    value += 2;
+  } else if (eventKey === "aceBoost" && card.rank === "A") {
+    value += 2;
+  }
+  return value;
+}
+
+function compareDuelCards(leftCard, rightCard, options = {}) {
+  const leftBonus = options.leftBonus || 0;
+  const rightBonus = options.rightBonus || 0;
+  const breakTieWithSuit = options.breakTieWithSuit !== false;
+  const leftValue = getDuelAdjustedCardValue(leftCard) + leftBonus;
+  const rightValue = getDuelAdjustedCardValue(rightCard) + rightBonus;
+  if (leftValue === rightValue) {
+    if (!breakTieWithSuit) {
+      return 0;
+    }
+    return getSuitPriority(leftCard) === getSuitPriority(rightCard)
+      ? 0
+      : getSuitPriority(leftCard) > getSuitPriority(rightCard)
+        ? 1
+        : -1;
+  }
+  return leftValue > rightValue ? 1 : -1;
+}
+
+function getDuelVisibleCards(side) {
+  if (state.cards.duel.mode === "showdown") {
+    const pair = state.cards.duel.showdown.currentPair;
+    return pair ? [side === "left" ? pair.leftCard : pair.rightCard] : [];
+  }
+  if (state.cards.duel.mode === "tenhalf") {
+    return [...state.cards.duel.tenHalf[`${side}Cards`], ...state.cards.duel.tenHalf.centerCards];
+  }
+  return [...state.cards.duel.chaseNine[`${side}Cards`], ...(state.cards.duel.chaseNine.fateCard ? [state.cards.duel.chaseNine.fateCard] : [])];
+}
+
+function replaceDuelCard(targetSide, strategy) {
+  const mode = state.cards.duel.mode;
+  if (mode === "showdown") {
+    if (state.cards.duel.showdown.stage !== "ready" || !state.cards.duel.showdown.currentPair) {
+      return false;
+    }
+    const cardKey = targetSide === "left" ? "leftCard" : "rightCard";
+    state.cards.duel.showdown.currentPair[cardKey] = drawCardFromDuelModeDeck("showdown");
+    return true;
+  }
+
+  const game = mode === "tenhalf" ? state.cards.duel.tenHalf : state.cards.duel.chaseNine;
+  const cardsKey = `${targetSide}Cards`;
+  if (!game.started || game.finished || !game[cardsKey]?.length) {
+    return false;
+  }
+
+  const compareFn = (left, right) => compareDuelCards(left.card, right.card);
+  const mapped = game[cardsKey].map((card, index) => ({ card, index }));
+  const selected =
+    strategy === "lowest"
+      ? mapped.reduce((current, item) => (compareFn(item, current) < 0 ? item : current))
+      : mapped.reduce((current, item) => (compareFn(item, current) > 0 ? item : current));
+  game[cardsKey][selected.index] = drawCardFromDuelModeDeck(mode);
+  return true;
+}
+
+function getDuelSipDelta() {
+  const eventKey = state.cards.duel.currentEvent?.key;
+  if (eventKey === "sipPlus") {
+    return 1;
+  }
+  if (eventKey === "sipMinus") {
+    return -1;
+  }
+  return 0;
+}
+
+function getDuelPenaltyCount(baseCount, winnerSide = "", loserSide = "", options = {}) {
+  let count = baseCount + getDuelSipDelta();
+  if (winnerSide && state.cards.duel.effects[winnerSide]) {
+    count += state.cards.duel.effects[winnerSide].bonusSip;
+  }
+  if (loserSide && state.cards.duel.effects[loserSide]) {
+    count -= state.cards.duel.effects[loserSide].shieldSip;
+  }
+  if (options.riskBoost) {
+    count += options.riskBoost;
+  }
+  return Math.max(1, count);
+}
+
+function hasStudActionsRemaining(game, side) {
+  return !game[`${side}Locked`] && (!game[`${side}Drew`] || !game[`${side}Swapped`]);
+}
+
+function getNextStudTurn(game, currentSide) {
+  const otherSide = currentSide === "left" ? "right" : "left";
+  if (hasStudActionsRemaining(game, otherSide)) {
+    return otherSide;
+  }
+  if (hasStudActionsRemaining(game, currentSide)) {
+    return currentSide;
+  }
+  return otherSide;
+}
+
+function buildCardCombos(cards, chooseCount = 3) {
+  const results = [];
+  const walk = (startIndex, picked) => {
+    if (picked.length === chooseCount) {
+      results.push(picked);
+      return;
+    }
+    for (let index = startIndex; index < cards.length; index += 1) {
+      walk(index + 1, [...picked, cards[index]]);
+    }
+  };
+  walk(0, []);
+  return results;
+}
+
+function isThreeCardStraight(values) {
+  const unique = Array.from(new Set(values)).sort((left, right) => left - right);
+  if (unique.length !== 3) {
+    return false;
+  }
+  const normal = unique[2] - unique[0] === 2 && unique[1] - unique[0] === 1;
+  const aceLow = unique.join(",") === "2,3,14";
+  return normal || aceLow;
+}
+
+function evaluateThreeCardCombo(combo, options = {}) {
+  const flatBonus = options.flatBonus || 0;
+  const sharedCardId = options.sharedCardId || "";
+  const values = combo.map((card) => getDuelAdjustedCardValue(card)).sort((left, right) => right - left);
+  const suits = combo.map((card) => card.suit);
+  const counts = Object.values(
+    combo.reduce((map, card) => {
+      map[card.rank] = (map[card.rank] || 0) + 1;
+      return map;
+    }, {}),
+  ).sort((left, right) => right - left);
+  const flush = suits.every((suit) => suit === suits[0]);
+  const straight = isThreeCardStraight(values);
+  let rank = 1;
+  let name = "高牌";
+
+  if (flush && straight) {
+    rank = 6;
+    name = "同花顺";
+  } else if (counts[0] === 3) {
+    rank = 5;
+    name = "豹子";
+  } else if (straight) {
+    rank = 4;
+    name = "顺子";
+  } else if (flush) {
+    rank = 3;
+    name = "同花";
+  } else if (counts[0] === 2) {
+    rank = 2;
+    name = "对子";
+  }
+
+  if (state.cards.duel.currentEvent?.key === "pairBoost" && name === "对子") {
+    rank += 1;
+    name = "加成对子";
+  }
+
+  let score = rank * 1000 + values[0] * 25 + values[1] * 5 + values[2] + flatBonus * 12;
+  const usedSharedCard = sharedCardId && combo.some((card) => card.id === sharedCardId);
+  if (state.cards.duel.currentEvent?.key === "sharedBoost" && usedSharedCard) {
+    score += 18;
+  }
+
+  return {
+    score,
+    name,
+    cards: combo,
+    usedSharedCard,
+    highCard: values[0],
+  };
+}
+
+function getBestStudResult(sideCards, centerCards, flatBonus = 0) {
+  const allCards = [...sideCards, ...centerCards];
+  const combos = buildCardCombos(allCards, 3);
+  const sharedCardId = centerCards[0]?.id || "";
+  return combos
+    .map((combo) => evaluateThreeCardCombo(combo, { flatBonus, sharedCardId }))
+    .sort((left, right) => right.score - left.score)[0];
+}
+
+function compareStudResults(leftResult, rightResult) {
+  if (leftResult.score === rightResult.score) {
+    return 0;
+  }
+  return leftResult.score > rightResult.score ? 1 : -1;
+}
+
+function evaluateRedBlackBet(cards, fateCard, bet, flatBonus = 0) {
+  const allCards = [...cards, fateCard].filter(Boolean);
+  const hits = allCards.filter((card) => {
+    const adjustedValue = getDuelAdjustedCardValue(card);
+    if (bet === "red") {
+      return card.color === "red";
+    }
+    if (bet === "black") {
+      return card.color === "black";
+    }
+    if (bet === "high") {
+      return adjustedValue >= 10;
+    }
+    return adjustedValue <= 8;
+  }).length;
+  const sum = allCards.reduce((total, card) => total + getDuelAdjustedCardValue(card), 0) + flatBonus;
+  return {
+    bet,
+    hits,
+    sum,
+  };
+}
+
+function useDuelSkill(side, skillIndex) {
+  const handKey = side === "left" ? "leftSkills" : "rightSkills";
+  const skill = state.cards.duel[handKey][skillIndex];
+  if (!skill) {
+    return;
+  }
+
+  const effects = state.cards.duel.effects[side];
+  let success = true;
+  let message = "";
+
+  switch (skill.key) {
+    case "power":
+      effects.bonusSip += 1;
+      message = `${side === "left" ? state.cards.duel.leftPlayer : state.cards.duel.rightPlayer} 本轮已挂上“加倍王牌”，赢了会额外多赚一口。`;
+      break;
+    case "shield":
+      effects.shieldSip += 1;
+      message = `${side === "left" ? state.cards.duel.leftPlayer : state.cards.duel.rightPlayer} 本轮套上了护盾，输了也能少喝一点。`;
+      break;
+    case "flatBonus":
+      effects.flatBonus += 1;
+      message = `${side === "left" ? state.cards.duel.leftPlayer : state.cards.duel.rightPlayer} 本轮牌势 +1，适合拿来冲关键局。`;
+      break;
+    case "rerollEvent":
+      drawNextDuelEvent({ render: false });
+      message = `事件牌已重洗：${state.cards.duel.currentEvent.title}。`;
+      break;
+    case "peekTop": {
+      const game = getCurrentDuelModeState();
+      const topCard = game.deck?.[game.deck.length - 1];
+      if (!topCard) {
+        success = false;
+      } else {
+        effects.peekCard = getCardDisplayName(topCard);
+        message = `${side === "left" ? state.cards.duel.leftPlayer : state.cards.duel.rightPlayer} 偷看到下一张牌是 ${effects.peekCard}。`;
+      }
+      break;
+    }
+    case "refreshSelf":
+      success = replaceDuelCard(side, "lowest");
+      message = `${side === "left" ? state.cards.duel.leftPlayer : state.cards.duel.rightPlayer} 把自己当前最弱的一张牌换掉了。`;
+      break;
+    case "refreshOpponent": {
+      const targetSide = side === "left" ? "right" : "left";
+      success = replaceDuelCard(targetSide, "highest");
+      message = `${side === "left" ? state.cards.duel.leftPlayer : state.cards.duel.rightPlayer} 出手拆掉了对方当前最强的一张牌。`;
+      break;
+    }
+    default:
+      success = false;
+      break;
+  }
+
+  if (!success) {
+    state.cards.duel.toolkitMessage = "这张技能现在还用不上，先把当前这局开起来再试。";
+    renderApp();
+    return;
+  }
+
+  state.cards.duel[handKey].splice(skillIndex, 1);
+  refillDuelSkills(side, { render: false });
+  state.cards.duel.toolkitMessage = message;
+  playUiTone("soft");
+  renderApp();
 }
 
 function getRandomPlayer(excludeName = "") {
@@ -2714,6 +3290,7 @@ function swapDuelPlayers() {
 
 function resetDuelScoreboard() {
   state.cards.duel.score = { left: 0, right: 0 };
+  state.cards.duel.recentMomentIds = [];
   state.cards.duel.totalRounds = 0;
   state.cards.duel.lastWinner = "";
   state.cards.duel.history = [];
@@ -2727,75 +3304,120 @@ function setDuelTheme(theme) {
   renderApp();
 }
 
+function startDuelShowdownRound() {
+  const duel = state.cards.duel;
+  const game = duel.showdown;
+  prepareDuelRound("快抽决斗");
+  game.stage = "ready";
+  game.battle = [];
+  game.winner = "";
+  game.moment = "";
+  game.penalty = "先看事件牌和技能，再点“比牌结算”。";
+  game.currentPair = {
+    leftCard: drawCardFromDuelModeDeck("showdown"),
+    rightCard: drawCardFromDuelModeDeck("showdown"),
+  };
+  game.message = "双方首张牌已经亮开。现在可以先动技能，再结算本轮。";
+  playUiTone("soft");
+  renderApp();
+}
+
 function drawDuelShowdown() {
   const duel = state.cards.duel;
   const game = duel.showdown;
-  let deck = [...game.deck];
-  const battle = [];
+  if (game.stage !== "ready" || !game.currentPair) {
+    startDuelShowdownRound();
+    return;
+  }
+
+  const battle = [game.currentPair];
   let winnerSide = "";
 
   while (!winnerSide) {
-    if (deck.length < 2) {
-      deck = shuffleArray(createDeck());
-    }
-    const leftCard = deck.pop();
-    const rightCard = deck.pop();
-    battle.push({ leftCard, rightCard });
-    const comparison = compareCardsByValue(leftCard, rightCard);
+    const comparison = compareDuelCards(battle[battle.length - 1].leftCard, battle[battle.length - 1].rightCard, {
+      leftBonus: duel.effects.left.flatBonus,
+      rightBonus: duel.effects.right.flatBonus,
+      breakTieWithSuit: false,
+    });
     if (comparison > 0) {
       winnerSide = "left";
     } else if (comparison < 0) {
       winnerSide = "right";
+    } else {
+      battle.push({
+        leftCard: drawCardFromDuelModeDeck("showdown"),
+        rightCard: drawCardFromDuelModeDeck("showdown"),
+      });
     }
   }
 
   const winnerName = winnerSide === "left" ? duel.leftPlayer : duel.rightPlayer;
-  const loserName = winnerSide === "left" ? duel.rightPlayer : duel.leftPlayer;
-  duel.score[winnerSide] += 1;
-  duel.totalRounds += 1;
-  duel.lastWinner = winnerSide;
-  game.deck = deck;
-  game.battle = battle;
-  game.winner = winnerSide;
+  const loserSide = winnerSide === "left" ? "right" : "left";
+  const loserName = loserSide === "left" ? duel.leftPlayer : duel.rightPlayer;
+  const sipCount = getDuelPenaltyCount(battle.length, winnerSide, loserSide);
   const outcome = buildDuelThemeOutcome(
     "showdown",
     {
+      left: duel.leftPlayer,
+      right: duel.rightPlayer,
       winner: winnerName,
       loser: loserName,
       battleCount: battle.length,
     },
-    `${loserName} 喝 ${battle.length} 口；如果想温柔一点，也可以改成喝一口加说一句“我服了”。`,
+    `${loserName} 喝 ${sipCount} 口；如果想温柔一点，也可以改成喝一口加说一句“我服了”。`,
   );
+
+  duel.score[winnerSide] += 1;
+  duel.totalRounds += 1;
+  duel.lastWinner = winnerSide;
+  game.stage = "resolved";
+  game.currentPair = battle[battle.length - 1];
+  game.battle = battle;
+  game.winner = winnerSide;
   game.message =
     battle.length > 1
-      ? `${winnerName} 在 ${battle.length - 1} 次平手加码后翻到了更大的牌，抢下这一轮。`
-      : `${winnerName} 这轮直接压住对手，先下一杯。`;
+      ? `${winnerName} 在 ${battle.length - 1} 次加码翻牌后笑到了最后。`
+      : `${winnerName} 这轮快抽压住了对面，节奏拿得很稳。`;
   game.penalty = outcome.penalty;
   game.moment = outcome.moment;
-  pushDuelHistory("对抽比大小", `${winnerName} 拿下快抽局`, `${game.message} ${game.penalty}${game.moment ? ` ${game.moment}` : ""}`);
+  pushDuelHistory("快抽决斗", `${winnerName} 拿下快抽局`, `${game.message} ${game.penalty}${game.moment ? ` ${game.moment}` : ""}`);
+  resetDuelRoundEffects();
+  duel.toolkitMessage = `${winnerName} 已拿下快抽决斗，下一轮会重新翻新的事件牌。`;
   playUiTone("success");
   renderApp();
 }
 
 function resetDuelShowdown() {
   state.cards.duel.showdown = createDuelShowdownState();
+  resetDuelRoundEffects();
   playUiTone("soft");
   renderApp();
 }
 
 function startDuelTenHalfRound() {
+  prepareDuelRound("心动梭哈");
   const deck = shuffleArray(createDeck());
+  const centerCards = [drawCardFromDeck(deck)];
+  const leftCards = [drawCardFromDeck(deck), drawCardFromDeck(deck)];
+  const rightCards = [drawCardFromDeck(deck), drawCardFromDeck(deck)];
   state.cards.duel.tenHalf = {
+    ...createDuelTenHalfState(),
     deck,
-    leftCards: [deck.pop()],
-    rightCards: [deck.pop()],
-    leftStanding: false,
-    rightStanding: false,
+    centerCards,
+    leftCards,
+    rightCards,
+    leftLocked: false,
+    rightLocked: false,
+    leftDrew: false,
+    rightDrew: false,
+    leftSwapped: false,
+    rightSwapped: false,
     turn: "left",
     started: true,
     finished: false,
     winner: "",
-    message: `${state.cards.duel.leftPlayer} 先决定要不要继续要牌，别一上来就冲太猛。`,
+    result: null,
+    message: `共享牌已经翻开，轮到 ${state.cards.duel.leftPlayer} 决定是补牌、弃换还是先锁牌。`,
     penalty: "这一局默认按点数结算，输家喝一小口。",
     moment: "",
   };
@@ -2803,65 +3425,18 @@ function startDuelTenHalfRound() {
   renderApp();
 }
 
-function getNextTenHalfTurn(game, currentSide) {
-  const otherSide = currentSide === "left" ? "right" : "left";
-  const currentStanding = game[`${currentSide}Standing`];
-  const otherStanding = game[`${otherSide}Standing`];
-  const currentBust = getTenHalfTotal(game[`${currentSide}Cards`]) > 10.5;
-  const otherBust = getTenHalfTotal(game[`${otherSide}Cards`]) > 10.5;
-
-  if (!otherStanding && !otherBust) {
-    return otherSide;
-  }
-  if (!currentStanding && !currentBust) {
-    return currentSide;
-  }
-  return currentSide;
-}
-
 function resolveDuelTenHalf(options = {}) {
   const { reason = "" } = options;
   const duel = state.cards.duel;
   const game = duel.tenHalf;
-  const leftTotal = getTenHalfTotal(game.leftCards);
-  const rightTotal = getTenHalfTotal(game.rightCards);
-  const leftBust = leftTotal > 10.5;
-  const rightBust = rightTotal > 10.5;
-  const leftFive = game.leftCards.length >= 5 && leftTotal <= 10.5;
-  const rightFive = game.rightCards.length >= 5 && rightTotal <= 10.5;
-  let winner = "draw";
-  let message = "";
-
-  if (leftFive || rightFive) {
-    if (leftFive && !rightFive) {
-      winner = "left";
-      message = `${duel.leftPlayer} 先凑出五张不断牌，直接压住全场。`;
-    } else if (!leftFive && rightFive) {
-      winner = "right";
-      message = `${duel.rightPlayer} 先凑出五张不断牌，直接赢下这一杯。`;
-    }
-  }
-
-  if (winner === "draw") {
-    if (leftBust && rightBust) {
-      message = "两边都爆了，这局算双爆平手，碰杯各喝一口就算过。";
-    } else if (leftBust) {
-      winner = "right";
-      message = `${duel.leftPlayer} 爆了，${duel.rightPlayer} 稳稳拿下。`;
-    } else if (rightBust) {
-      winner = "left";
-      message = `${duel.rightPlayer} 爆了，${duel.leftPlayer} 成功收下这一局。`;
-    } else if (leftTotal !== rightTotal) {
-      winner = leftTotal > rightTotal ? "left" : "right";
-      message = `${winner === "left" ? duel.leftPlayer : duel.rightPlayer} 更接近 10 点半，这杯归对面。`;
-    } else if (game.leftCards.length !== game.rightCards.length) {
-      winner = game.leftCards.length < game.rightCards.length ? "left" : "right";
-      message = `点数相同，牌更少的一方更稳，${winner === "left" ? duel.leftPlayer : duel.rightPlayer} 小胜一手。`;
-    } else {
-      message = "两边连点数和张数都一样，这局就算不分胜负，碰杯小抿一口。";
-    }
-  }
-
+  const leftResult = getBestStudResult(game.leftCards, game.centerCards, duel.effects.left.flatBonus);
+  const rightResult = getBestStudResult(game.rightCards, game.centerCards, duel.effects.right.flatBonus);
+  const comparison = compareStudResults(leftResult, rightResult);
+  const winner = comparison === 0 ? "draw" : comparison > 0 ? "left" : "right";
+  const message =
+    winner === "draw"
+      ? "双方牌势几乎咬死，这局梭哈到了一个非常暧昧的平局。"
+      : `${winner === "left" ? duel.leftPlayer : duel.rightPlayer} 组出了更强的三张组合。`;
   duel.totalRounds += 1;
   duel.lastWinner = winner === "draw" ? "" : winner;
   if (winner === "left" || winner === "right") {
@@ -2876,24 +3451,32 @@ function resolveDuelTenHalf(options = {}) {
           right: duel.rightPlayer,
         }
       : {
+          left: duel.leftPlayer,
+          right: duel.rightPlayer,
           winner: winner === "left" ? duel.leftPlayer : duel.rightPlayer,
           loser: winner === "left" ? duel.rightPlayer : duel.leftPlayer,
         },
     winner === "draw"
       ? "两边都别太较真，先碰杯小抿一口，这局当心动试探局。"
-      : `${winner === "left" ? duel.rightPlayer : duel.leftPlayer} 喝一小口；如果想加戏，就让赢家指定一句心动夸夸。`,
+      : `${winner === "left" ? duel.rightPlayer : duel.leftPlayer} 喝 ${getDuelPenaltyCount(1, winner, winner === "left" ? "right" : "left")} 口；如果想加戏，就让赢家指定一句心动夸夸。`,
   );
 
   game.finished = true;
   game.winner = winner;
-  game.message = `${message}${reason ? ` ${reason}` : ""} 当前点数：${duel.leftPlayer} ${formatTenHalfTotal(leftTotal)}，${duel.rightPlayer} ${formatTenHalfTotal(rightTotal)}。`;
+  game.result = {
+    left: leftResult,
+    right: rightResult,
+  };
+  game.message = `${message}${reason ? ` ${reason}` : ""} ${duel.leftPlayer} 是 ${leftResult.name}，${duel.rightPlayer} 是 ${rightResult.name}。`;
   game.penalty = outcome.penalty;
   game.moment = outcome.moment;
   pushDuelHistory(
-    "十点半对酌",
-    winner === "draw" ? "十点半打平" : `${winner === "left" ? duel.leftPlayer : duel.rightPlayer} 拿下十点半`,
+    "心动梭哈",
+    winner === "draw" ? "心动梭哈打平" : `${winner === "left" ? duel.leftPlayer : duel.rightPlayer} 拿下心动梭哈`,
     `${game.message} ${game.penalty}${game.moment ? ` ${game.moment}` : ""}`,
   );
+  resetDuelRoundEffects();
+  duel.toolkitMessage = `${winner === "draw" ? "这局打平，下一轮重新发共享牌。" : `${winner === "left" ? duel.leftPlayer : duel.rightPlayer} 拿下了这轮心动梭哈。`}`;
   playUiTone(winner === "draw" ? "soft" : "success");
   renderApp();
 }
@@ -2905,38 +3488,59 @@ function takeTenHalfCard() {
     startDuelTenHalfRound();
     return;
   }
-
   const side = game.turn;
-  const cardsKey = side === "left" ? "leftCards" : "rightCards";
+  const cardsKey = `${side}Cards`;
   const playerName = side === "left" ? duel.leftPlayer : duel.rightPlayer;
-  if (game.deck.length < 1) {
-    game.deck = shuffleArray(createDeck());
+  if (game[`${side}Drew`] || game[`${side}Locked`]) {
+    game.message = `${playerName} 这边已经补过牌了，试试弃换或者直接锁牌。`;
+    renderApp();
+    return;
   }
-  game[cardsKey].push(game.deck.pop());
-  const total = getTenHalfTotal(game[cardsKey]);
+  game[cardsKey].push(drawCardFromDuelModeDeck("tenhalf"));
+  game[`${side}Drew`] = true;
+  if (!hasStudActionsRemaining(game, "left") && !hasStudActionsRemaining(game, "right")) {
+    resolveDuelTenHalf({ reason: "双方都已经把能动的手段用完，系统自动摊牌。" });
+    return;
+  }
+  game.turn = getNextStudTurn(game, side);
+  game.message = `${playerName} 选择了补一张。轮到${game.turn === "left" ? duel.leftPlayer : duel.rightPlayer}。`;
+  playUiTone("soft");
+  renderApp();
+}
 
-  if (game[cardsKey].length >= 5 && total <= 10.5) {
-    resolveDuelTenHalf({ reason: `${playerName} 成功摸到了五张不断牌。` });
+function swapDuelTenHalfCard() {
+  const duel = state.cards.duel;
+  const game = duel.tenHalf;
+  if (!game.started || game.finished) {
     return;
   }
 
-  if (total > 10.5) {
-    game[`${side}Standing`] = true;
-    const otherSide = side === "left" ? "right" : "left";
-    const otherStanding = game[`${otherSide}Standing`] || getTenHalfTotal(game[`${otherSide}Cards`]) > 10.5;
-    if (otherStanding) {
-      resolveDuelTenHalf();
-      return;
-    }
-    game.turn = otherSide;
-    game.message = `${playerName} 爆了，轮到另一边决定是稳一下还是继续冲。`;
-    playUiTone("alert");
+  const side = game.turn;
+  const playerName = side === "left" ? duel.leftPlayer : duel.rightPlayer;
+  if (game[`${side}Swapped`] || game[`${side}Locked`]) {
+    game.message = `${playerName} 这边已经弃换过了，可以补牌或者直接锁牌。`;
     renderApp();
     return;
   }
 
-  game.turn = getNextTenHalfTurn(game, side);
-  game.message = `${playerName} 现在是 ${formatTenHalfTotal(total)} 点。轮到${game.turn === "left" ? duel.leftPlayer : duel.rightPlayer}表态。`;
+  const cardsKey = `${side}Cards`;
+  const mapped = game[cardsKey].map((card, index) => ({ card, index }));
+  const weakest = mapped.reduce((current, item) =>
+    compareDuelCards(item.card, current.card, {
+      leftBonus: duel.effects[side].flatBonus,
+      rightBonus: 0,
+    }) < 0
+      ? item
+      : current,
+  );
+  game[cardsKey][weakest.index] = drawCardFromDuelModeDeck("tenhalf");
+  game[`${side}Swapped`] = true;
+  if (!hasStudActionsRemaining(game, "left") && !hasStudActionsRemaining(game, "right")) {
+    resolveDuelTenHalf({ reason: "双方的手段都用完了，系统自动摊牌。" });
+    return;
+  }
+  game.turn = getNextStudTurn(game, side);
+  game.message = `${playerName} 选择弃掉最弱牌换了一张。轮到${game.turn === "left" ? duel.leftPlayer : duel.rightPlayer}。`;
   playUiTone("soft");
   renderApp();
 }
@@ -2950,13 +3554,16 @@ function standTenHalf() {
 
   const side = game.turn;
   const playerName = side === "left" ? duel.leftPlayer : duel.rightPlayer;
-  game[`${side}Standing`] = true;
-  if (game.leftStanding && game.rightStanding) {
+  game[`${side}Locked`] = true;
+  if (game.leftLocked && game.rightLocked) {
     resolveDuelTenHalf();
     return;
   }
-
-  game.turn = getNextTenHalfTurn(game, side);
+  if (!hasStudActionsRemaining(game, "left") && !hasStudActionsRemaining(game, "right")) {
+    resolveDuelTenHalf({ reason: "双方都已经没有后手，这局直接结算。" });
+    return;
+  }
+  game.turn = getNextStudTurn(game, side);
   game.message = `${playerName} 选择稳住不再要牌，轮到${game.turn === "left" ? duel.leftPlayer : duel.rightPlayer}。`;
   playUiTone("soft");
   renderApp();
@@ -2964,64 +3571,134 @@ function standTenHalf() {
 
 function resetDuelTenHalf() {
   state.cards.duel.tenHalf = createDuelTenHalfState();
+  resetDuelRoundEffects();
   playUiTone("soft");
   renderApp();
 }
 
 function drawChaseNineRound() {
-  const duel = state.cards.duel;
-  const game = duel.chaseNine;
-  let deck = [...game.deck];
-  if (deck.length < 6) {
-    deck = shuffleArray(createDeck());
-  }
-
-  const leftCards = [deck.pop(), deck.pop(), deck.pop()];
-  const rightCards = [deck.pop(), deck.pop(), deck.pop()];
-  const leftResult = evaluateChaseNine(leftCards);
-  const rightResult = evaluateChaseNine(rightCards);
-  let winner = "left";
-
-  if (leftResult.points !== rightResult.points) {
-    winner = leftResult.points > rightResult.points ? "left" : "right";
-  } else {
-    winner =
-      compareCardsByValue(leftResult.highCard, rightResult.highCard, { breakTieWithSuit: true }) >= 0 ? "left" : "right";
-  }
-
-  const winnerName = winner === "left" ? duel.leftPlayer : duel.rightPlayer;
-  const loserName = winner === "left" ? duel.rightPlayer : duel.leftPlayer;
-  const diff = Math.abs(leftResult.points - rightResult.points);
-
-  duel.score[winner] += 1;
-  duel.totalRounds += 1;
-  duel.lastWinner = winner;
-  game.deck = deck;
-  game.leftCards = leftCards;
-  game.rightCards = rightCards;
-  game.winner = winner;
-  const outcome = buildDuelThemeOutcome(
-    "chasenine",
-    {
-      winner: winnerName,
-      loser: loserName,
-      diff,
-    },
-    diff >= 4
-      ? `${loserName} 这轮差距有点大，喝两口，再顺手夸对面一句“你这把手气可以”。`
-      : `${loserName} 喝一口，如果想加戏，也可以让赢家指定一个拍手节奏跟着做。`,
-  );
-  game.message = `${winnerName} 抢到了更大的个位数：${duel.leftPlayer} 是 ${leftResult.points} 点，${duel.rightPlayer} 是 ${rightResult.points} 点。`;
-  game.penalty = outcome.penalty;
-  game.moment = outcome.moment;
-  pushDuelHistory("三张抢九", `${winnerName} 抢下抢九局`, `${game.message} ${game.penalty}${game.moment ? ` ${game.moment}` : ""}`);
-  playUiTone("success");
+  prepareDuelRound("红黑博弈局");
+  const deck = shuffleArray(createDeck());
+  const leftCards = [drawCardFromDeck(deck), drawCardFromDeck(deck)];
+  const rightCards = [drawCardFromDeck(deck), drawCardFromDeck(deck)];
+  state.cards.duel.chaseNine = {
+    ...createDuelChaseNineState(),
+    deck,
+    leftCards,
+    rightCards,
+    fateCard: null,
+    leftBet: "",
+    rightBet: "",
+    leftRisk: false,
+    rightRisk: false,
+    started: true,
+    finished: false,
+    result: null,
+    winner: "",
+    message: "双方 2 张牌已亮开。先押红黑或大小，再决定要不要加码。",
+    penalty: "等双方押注完成后，再翻命运牌结算。",
+    moment: "",
+  };
+  playUiTone("soft");
   renderApp();
 }
 
 function resetDuelChaseNine() {
   state.cards.duel.chaseNine = createDuelChaseNineState();
+  resetDuelRoundEffects();
   playUiTone("soft");
+  renderApp();
+}
+
+function setDuelBet(side, bet) {
+  const game = state.cards.duel.chaseNine;
+  if (!game.started || game.finished) {
+    return;
+  }
+  if (!["red", "black", "high", "low"].includes(bet)) {
+    return;
+  }
+  game[`${side}Bet`] = bet;
+  state.cards.duel.toolkitMessage = `${side === "left" ? state.cards.duel.leftPlayer : state.cards.duel.rightPlayer} 现在押的是 ${bet === "red" ? "红" : bet === "black" ? "黑" : bet === "high" ? "大" : "小"}。`;
+  renderApp();
+}
+
+function toggleDuelRisk(side) {
+  const game = state.cards.duel.chaseNine;
+  if (!game.started || game.finished) {
+    return;
+  }
+  game[`${side}Risk`] = !game[`${side}Risk`];
+  state.cards.duel.toolkitMessage = `${side === "left" ? state.cards.duel.leftPlayer : state.cards.duel.rightPlayer}${game[`${side}Risk`] ? " 选择了加码，这轮赢了会赚更多，输了也更疼。" : " 取消了加码，准备稳一点玩。"} `;
+  renderApp();
+}
+
+function resolveDuelChaseNine() {
+  const duel = state.cards.duel;
+  const game = duel.chaseNine;
+  if (!game.started || game.finished) {
+    return;
+  }
+  if (!game.leftBet || !game.rightBet) {
+    game.message = "左右两边都要先押好红黑或大小，才能翻命运牌。";
+    renderApp();
+    return;
+  }
+
+  game.fateCard = drawCardFromDuelModeDeck("chasenine");
+  const leftResult = evaluateRedBlackBet(game.leftCards, game.fateCard, game.leftBet, duel.effects.left.flatBonus);
+  const rightResult = evaluateRedBlackBet(game.rightCards, game.fateCard, game.rightBet, duel.effects.right.flatBonus);
+  let winner = "draw";
+  if (leftResult.hits !== rightResult.hits) {
+    winner = leftResult.hits > rightResult.hits ? "left" : "right";
+  } else if (leftResult.sum !== rightResult.sum) {
+    winner = leftResult.sum > rightResult.sum ? "left" : "right";
+  }
+
+  duel.totalRounds += 1;
+  duel.lastWinner = winner === "draw" ? "" : winner;
+  if (winner === "left" || winner === "right") {
+    duel.score[winner] += 1;
+  }
+
+  const winnerName = winner === "left" ? duel.leftPlayer : duel.rightPlayer;
+  const loserName = winner === "left" ? duel.rightPlayer : duel.leftPlayer;
+  const riskBoost =
+    winner === "draw"
+      ? 0
+      : (game[`${winner}Risk`] ? 1 : 0) + (state.cards.duel.currentEvent?.key === "riskBoost" && game[`${winner}Risk`] ? 1 : 0) + (game[`${winner === "left" ? "right" : "left"}Risk`] ? 1 : 0);
+  const outcome = buildDuelThemeOutcome(
+    winner === "draw" ? "draw" : "chasenine",
+    winner === "draw"
+      ? {
+          draw: true,
+          left: duel.leftPlayer,
+          right: duel.rightPlayer,
+        }
+      : {
+          left: duel.leftPlayer,
+          right: duel.rightPlayer,
+          winner: winnerName,
+          loser: loserName,
+        },
+    winner === "draw"
+      ? "双方命中了同样多的条件，这局先碰杯小抿一口。"
+      : `${loserName} 喝 ${getDuelPenaltyCount(1, winner, winner === "left" ? "right" : "left", { riskBoost })} 口；这局是明显的博弈局，有押注就有代价。`,
+  );
+
+  game.finished = true;
+  game.winner = winner === "draw" ? "" : winner;
+  game.result = { left: leftResult, right: rightResult };
+  game.message =
+    winner === "draw"
+      ? `双方都命中了 ${leftResult.hits} 个条件，连总牌势都咬得很紧。`
+      : `${winnerName} 押得更准：命中 ${winner === "left" ? leftResult.hits : rightResult.hits} 个条件。`;
+  game.penalty = outcome.penalty;
+  game.moment = outcome.moment;
+  pushDuelHistory("红黑博弈局", winner === "draw" ? "红黑博弈打平" : `${winnerName} 押中了关键局`, `${game.message} ${game.penalty}${game.moment ? ` ${game.moment}` : ""}`);
+  resetDuelRoundEffects();
+  duel.toolkitMessage = `${winner === "draw" ? "这轮押注打平，下一轮可以换个思路。" : `${winnerName} 押中了这轮命运牌。`}`;
+  playUiTone(winner === "draw" ? "soft" : "success");
   renderApp();
 }
 
@@ -3334,7 +4011,7 @@ function handleClick(event) {
   }
 
   event.preventDefault();
-  const { action, game, level, guess, tab, index, choice } = actionTrigger.dataset;
+  const { action, game, level, guess, tab, index, choice, side } = actionTrigger.dataset;
 
   switch (action) {
     case "go-home":
@@ -3487,6 +4164,12 @@ function handleClick(event) {
     case "duel-set-theme":
       setDuelTheme(choice);
       break;
+    case "duel-draw-event":
+      drawNextDuelEvent();
+      break;
+    case "duel-use-skill":
+      useDuelSkill(side, Number(index));
+      break;
     case "duel-random-players":
       randomizeDuelPlayers();
       break;
@@ -3499,6 +4182,9 @@ function handleClick(event) {
     case "duel-draw-showdown":
       drawDuelShowdown();
       break;
+    case "duel-start-showdown":
+      startDuelShowdownRound();
+      break;
     case "duel-reset-showdown":
       resetDuelShowdown();
       break;
@@ -3508,11 +4194,23 @@ function handleClick(event) {
     case "duel-hit-tenhalf":
       takeTenHalfCard();
       break;
+    case "duel-swap-tenhalf":
+      swapDuelTenHalfCard();
+      break;
     case "duel-stand-tenhalf":
       standTenHalf();
       break;
     case "duel-reset-tenhalf":
       resetDuelTenHalf();
+      break;
+    case "duel-set-bet":
+      setDuelBet(side, choice);
+      break;
+    case "duel-toggle-risk":
+      toggleDuelRisk(side);
+      break;
+    case "duel-reveal-chasenine":
+      resolveDuelChaseNine();
       break;
     case "duel-draw-chasenine":
       drawChaseNineRound();
@@ -4653,8 +5351,10 @@ function renderDuelGame() {
             `,
           ).join("")}
         </div>
-        <p class="footer-note">${escapeHtml(activeMode.detail)} 当前规则包：${escapeHtml(activeTheme.detail)}</p>
+        <p class="footer-note">${escapeHtml(activeMode.detail)} 当前规则包：${escapeHtml(activeTheme.detail)} 共享互动池共 ${DUEL_COUPLE_MOMENT_POOL.length} 条。</p>
       </div>
+
+      ${renderDuelToolkit()}
 
       ${renderActiveDuelMode()}
 
@@ -4691,6 +5391,93 @@ function renderDuelPlayerSeat(label, name, score, isWinner) {
   `;
 }
 
+function renderDuelToolkit() {
+  const duel = state.cards.duel;
+  return `
+    <div class="rules-card">
+      <div class="toggle-row">
+        <div>
+          <h4>事件牌与技能手牌</h4>
+          <p class="footer-note">${escapeHtml(duel.toolkitMessage)}</p>
+        </div>
+        <div class="button-row duel-top-actions">
+          <button type="button" class="ghost-btn" data-action="duel-draw-event">换一张事件牌</button>
+        </div>
+      </div>
+
+      ${
+        duel.currentEvent
+          ? `
+            <div class="command-card duel-event-card">
+              <small>当前事件牌</small>
+              <h3>${escapeHtml(duel.currentEvent.title)}</h3>
+              <p>${escapeHtml(duel.currentEvent.detail)}</p>
+            </div>
+          `
+          : ""
+      }
+
+      <div class="duel-skill-board">
+        ${renderDuelSkillHand("left", duel.leftPlayer, duel.leftSkills, duel.effects.left)}
+        ${renderDuelSkillHand("right", duel.rightPlayer, duel.rightSkills, duel.effects.right)}
+      </div>
+    </div>
+  `;
+}
+
+function renderDuelSkillHand(side, name, skills, effects) {
+  const effectNotes = [];
+  if (effects.bonusSip) {
+    effectNotes.push(`赢了 +${effects.bonusSip} 口`);
+  }
+  if (effects.shieldSip) {
+    effectNotes.push(`输了 -${effects.shieldSip} 口`);
+  }
+  if (effects.flatBonus) {
+    effectNotes.push(`牌势 +${effects.flatBonus}`);
+  }
+  if (effects.peekCard) {
+    effectNotes.push(`偷看到 ${effects.peekCard}`);
+  }
+
+  return `
+    <article class="player-hand-card duel-skill-hand">
+      <div class="toggle-row">
+        <div>
+          <strong>${escapeHtml(name)}</strong>
+          <p class="footer-note">技能手牌 ${skills.length} / 2</p>
+        </div>
+        <span class="small-chip">${effectNotes.length ? escapeHtml(effectNotes.join(" · ")) : "本轮暂无加成"}</span>
+      </div>
+      <div class="rules-list duel-skill-list">
+        ${
+          skills.length
+            ? skills
+                .map(
+                  (skill, index) => `
+                    <button
+                      type="button"
+                      class="rule-item duel-skill-card"
+                      data-action="duel-use-skill"
+                      data-side="${side}"
+                      data-index="${index}"
+                    >
+                      <div class="rule-rank">${escapeHtml(skill.title.slice(0, 2))}</div>
+                      <div>
+                        <strong>${escapeHtml(skill.title)}</strong>
+                        <p style="margin: 6px 0 0; color: var(--text-muted);">${escapeHtml(skill.detail)}</p>
+                      </div>
+                    </button>
+                  `,
+                )
+                .join("")
+            : `<div class="empty-state">这边暂时没有技能牌，下一轮会自动补回 2 张。</div>`
+        }
+      </div>
+    </article>
+  `;
+}
+
 function renderActiveDuelMode() {
   switch (state.cards.duel.mode) {
     case "tenhalf":
@@ -4705,15 +5492,15 @@ function renderActiveDuelMode() {
 function renderDuelShowdown() {
   const duel = state.cards.duel;
   const game = duel.showdown;
-  const lastBattle = game.battle[game.battle.length - 1] || {};
+  const currentPair = game.currentPair || game.battle[game.battle.length - 1] || {};
   return `
     <div class="two-column">
       <div class="card-showcase">
-        ${lastBattle.leftCard ? renderPlayingCard(lastBattle.leftCard) : '<div class="placeholder-card">左边位等待翻牌</div>'}
+        ${currentPair.leftCard ? renderPlayingCard(currentPair.leftCard) : '<div class="placeholder-card">左边位等待翻牌</div>'}
         <div class="card-meta">
           <span class="deck-chip">牌堆剩余 ${game.deck.length} 张</span>
           <div class="button-row">
-            <button type="button" class="primary-btn" data-action="duel-draw-showdown">翻一轮</button>
+            <button type="button" class="primary-btn" data-action="${game.stage === "ready" ? "duel-draw-showdown" : "duel-start-showdown"}">${game.stage === "ready" ? "比牌结算" : "发起一轮"}</button>
             <button type="button" class="ghost-btn" data-action="duel-reset-showdown">重新洗牌</button>
           </div>
         </div>
@@ -4723,14 +5510,14 @@ function renderDuelShowdown() {
           <article class="player-hand-card">
             <strong>${escapeHtml(duel.leftPlayer)}</strong>
             <div class="mini-card-row" style="margin-top: 14px;">
-              ${lastBattle.leftCard ? renderMiniCard(lastBattle.leftCard) : '<div class="mini-card mini-card-placeholder">待翻</div>'}
+              ${currentPair.leftCard ? renderMiniCard(currentPair.leftCard) : '<div class="mini-card mini-card-placeholder">待翻</div>'}
             </div>
           </article>
           <div class="duel-vs-pill">VS</div>
           <article class="player-hand-card">
             <strong>${escapeHtml(duel.rightPlayer)}</strong>
             <div class="mini-card-row" style="margin-top: 14px;">
-              ${lastBattle.rightCard ? renderMiniCard(lastBattle.rightCard) : '<div class="mini-card mini-card-placeholder">待翻</div>'}
+              ${currentPair.rightCard ? renderMiniCard(currentPair.rightCard) : '<div class="mini-card mini-card-placeholder">待翻</div>'}
             </div>
           </article>
         </div>
@@ -4779,22 +5566,38 @@ function renderDuelTenHalf() {
   const currentTurnName = game.turn === "left" ? duel.leftPlayer : duel.rightPlayer;
   return `
     <div class="main-stack">
+      <div class="community-wrap">
+        <div class="toggle-row">
+          <div>
+            <h4>共享牌</h4>
+            <p class="footer-note">这一张牌两边都能用，事件牌也会影响它的牌势。</p>
+          </div>
+          <span class="deck-chip">牌堆剩余 ${game.deck.length} 张</span>
+        </div>
+        <div class="community-row">
+          ${game.centerCards.length ? game.centerCards.map((card) => renderMiniCard(card)).join("") : '<div class="mini-card mini-card-placeholder">待翻</div>'}
+        </div>
+      </div>
+
       <div class="duel-versus-row">
         ${renderDuelHandCard(duel.leftPlayer, game.leftCards, {
-          label: game.leftCards.length ? `${formatTenHalfTotal(getTenHalfTotal(game.leftCards))} 点` : "等待发牌",
-          note: game.leftStanding ? "已停牌" : game.started ? "仍可继续要牌" : "等待发新一局",
+          label: game.result?.left ? game.result.left.name : game.leftCards.length ? `${game.leftCards.length} 张手牌` : "等待发牌",
+          note: game.leftLocked ? "已锁牌" : game.started ? "仍可补牌或弃换" : "等待发新一局",
+          slotCount: 3,
         })}
-        <div class="duel-vs-pill">10.5</div>
+        <div class="duel-vs-pill">梭哈</div>
         ${renderDuelHandCard(duel.rightPlayer, game.rightCards, {
-          label: game.rightCards.length ? `${formatTenHalfTotal(getTenHalfTotal(game.rightCards))} 点` : "等待发牌",
-          note: game.rightStanding ? "已停牌" : game.started ? "仍可继续要牌" : "等待发新一局",
+          label: game.result?.right ? game.result.right.name : game.rightCards.length ? `${game.rightCards.length} 张手牌` : "等待发牌",
+          note: game.rightLocked ? "已锁牌" : game.started ? "仍可补牌或弃换" : "等待发新一局",
+          slotCount: 3,
         })}
       </div>
 
       <div class="button-row">
         <button type="button" class="primary-btn" data-action="duel-start-tenhalf">${game.started ? "重新发一局" : "发新一局"}</button>
-        <button type="button" class="secondary-btn" data-action="duel-hit-tenhalf">${game.started && !game.finished ? `给 ${currentTurnName} 要牌` : "继续要牌"}</button>
-        <button type="button" class="secondary-btn" data-action="duel-stand-tenhalf">当前位停牌</button>
+        <button type="button" class="secondary-btn" data-action="duel-hit-tenhalf">${game.started && !game.finished ? `给 ${currentTurnName} 补牌` : "当前位补牌"}</button>
+        <button type="button" class="secondary-btn" data-action="duel-swap-tenhalf">当前位弃换</button>
+        <button type="button" class="secondary-btn" data-action="duel-stand-tenhalf">当前位锁牌</button>
         <button type="button" class="ghost-btn" data-action="duel-reset-tenhalf">清空本局</button>
       </div>
 
@@ -4806,9 +5609,23 @@ function renderDuelTenHalf() {
 
       ${renderDuelMomentCard(game.moment)}
 
+      ${
+        game.result
+          ? `
+            <div class="rules-card">
+              <h4>摊牌结果</h4>
+              <div class="rules-list">
+                ${renderMiniRule(duel.leftPlayer.slice(0, 2), `${duel.leftPlayer} · ${game.result.left.name}`, `最佳三张：${formatCardNameList(game.result.left.cards)}。`)}
+                ${renderMiniRule(duel.rightPlayer.slice(0, 2), `${duel.rightPlayer} · ${game.result.right.name}`, `最佳三张：${formatCardNameList(game.result.right.cards)}。`)}
+              </div>
+            </div>
+          `
+          : ""
+      }
+
       <div class="rules-card">
         <h4>玩法提醒</h4>
-        <p>${duel.theme === "couple" ? "十点半对酌更像推拉局：有人停牌，有人继续冲，结算后会附带一句轻暧昧小互动。" : "规则：A 算 1 点，2 到 10 按牌面，J / Q / K 算 0.5 点；谁更接近 10.5 谁赢，五张不断牌直接吃满。"}</p>
+        <p>${duel.theme === "couple" ? "心动梭哈更像推拉局：先看共享牌，再决定补一张、弃换最弱牌还是直接锁牌，最后比三张组合。结算后继续走情侣互动池。" : "玩法是 2 张公开手牌 + 1 张共享牌，你可以补一张、弃换一张或直接锁牌，最终比较最佳三张组合。事件牌和技能牌都会影响牌势。"}</p>
       </div>
     </div>
   `;
@@ -4817,27 +5634,50 @@ function renderDuelTenHalf() {
 function renderDuelChaseNine() {
   const duel = state.cards.duel;
   const game = duel.chaseNine;
-  const leftEval = game.leftCards.length ? evaluateChaseNine(game.leftCards) : null;
-  const rightEval = game.rightCards.length ? evaluateChaseNine(game.rightCards) : null;
   return `
     <div class="main-stack">
       <div class="duel-versus-row">
         ${renderDuelHandCard(duel.leftPlayer, game.leftCards, {
-          label: leftEval ? `${leftEval.points} 点` : "等待发牌",
-          note: leftEval ? `原始合计 ${leftEval.rawTotal}，取个位。` : "各发三张后自动算分。",
-          slotCount: 3,
+          label: game.result?.left ? `命中 ${game.result.left.hits} 条` : "等待押注",
+          note: game.leftBet ? `当前押注：${renderDuelBetLabel(game.leftBet)}${game.leftRisk ? " · 已加码" : ""}` : "可押红 / 黑 / 大 / 小",
+          slotCount: 2,
         })}
-        <div class="duel-vs-pill">抢九</div>
+        <div class="duel-vs-pill">博弈</div>
         ${renderDuelHandCard(duel.rightPlayer, game.rightCards, {
-          label: rightEval ? `${rightEval.points} 点` : "等待发牌",
-          note: rightEval ? `原始合计 ${rightEval.rawTotal}，取个位。` : "同点数时继续比最高单牌。",
-          slotCount: 3,
+          label: game.result?.right ? `命中 ${game.result.right.hits} 条` : "等待押注",
+          note: game.rightBet ? `当前押注：${renderDuelBetLabel(game.rightBet)}${game.rightRisk ? " · 已加码" : ""}` : "可押红 / 黑 / 大 / 小",
+          slotCount: 2,
         })}
       </div>
 
+      ${
+        game.started
+          ? `
+            <div class="two-column">
+              ${renderDuelBetPanel("left", duel.leftPlayer, game.leftBet, game.leftRisk)}
+              ${renderDuelBetPanel("right", duel.rightPlayer, game.rightBet, game.rightRisk)}
+            </div>
+          `
+          : ""
+      }
+
       <div class="button-row">
-        <button type="button" class="primary-btn" data-action="duel-draw-chasenine">发三张</button>
+        <button type="button" class="primary-btn" data-action="duel-draw-chasenine">${game.started ? "重新发一局" : "发新一局"}</button>
+        <button type="button" class="secondary-btn" data-action="duel-reveal-chasenine">翻命运牌</button>
         <button type="button" class="ghost-btn" data-action="duel-reset-chasenine">重新洗牌</button>
+      </div>
+
+      <div class="community-wrap">
+        <div class="toggle-row">
+          <div>
+            <h4>命运牌</h4>
+            <p class="footer-note">双方押注完成后，再翻这张牌做最后结算。</p>
+          </div>
+          <span class="deck-chip">牌堆剩余 ${game.deck.length} 张</span>
+        </div>
+        <div class="community-row">
+          ${game.fateCard ? renderMiniCard(game.fateCard) : '<div class="mini-card mini-card-placeholder">待翻</div>'}
+        </div>
       </div>
 
       <div class="result-card" data-tone="${game.winner ? "win" : "neutral"}">
@@ -4848,11 +5688,74 @@ function renderDuelChaseNine() {
 
       ${renderDuelMomentCard(game.moment)}
 
+      ${
+        game.result
+          ? `
+            <div class="rules-card">
+              <h4>押注结算</h4>
+              <div class="rules-list">
+                ${renderMiniRule(duel.leftPlayer.slice(0, 2), `${duel.leftPlayer} · ${renderDuelBetLabel(game.leftBet)}`, `命中 ${game.result.left.hits} 项，最终牌势 ${game.result.left.sum}${game.leftRisk ? "，本轮已加码" : ""}。`)}
+                ${renderMiniRule(duel.rightPlayer.slice(0, 2), `${duel.rightPlayer} · ${renderDuelBetLabel(game.rightBet)}`, `命中 ${game.result.right.hits} 项，最终牌势 ${game.result.right.sum}${game.rightRisk ? "，本轮已加码" : ""}。`)}
+              </div>
+            </div>
+          `
+          : ""
+      }
+
       <div class="rules-card">
         <h4>玩法提醒</h4>
-        <p>${duel.theme === "couple" ? "抢九适合当小暧昧快局：发三张直接看个位数，分差越大，结算越有戏。" : "A 算 1，2 到 9 按牌面，10 / J / Q / K 算 0。三张牌合起来只看个位数，谁的个位数更大谁赢；如果个位数一样，就比各自最高单牌，继续分出高下。"}</p>
+        <p>${duel.theme === "couple" ? "红黑博弈局更像试探和反杀：先看牌，再押红黑或大小，还能决定要不要加码，命运牌翻开后气氛会很足。" : "玩法是双方先看自己 2 张牌，再押红 / 黑 / 大 / 小，并可选择是否加码。命运牌翻开后，命中条件更多的一方获胜；如果命中数相同，就比总牌势。"}</p>
       </div>
     </div>
+  `;
+}
+
+function renderDuelBetLabel(bet) {
+  const labels = {
+    red: "押红",
+    black: "押黑",
+    high: "押大",
+    low: "押小",
+  };
+  return labels[bet] || "未押注";
+}
+
+function renderDuelBetPanel(side, name, activeBet, riskOn) {
+  const bets = [
+    { key: "red", label: "押红" },
+    { key: "black", label: "押黑" },
+    { key: "high", label: "押大" },
+    { key: "low", label: "押小" },
+  ];
+  return `
+    <article class="player-hand-card duel-bet-panel">
+      <div class="toggle-row">
+        <div>
+          <strong>${escapeHtml(name)}</strong>
+          <p class="footer-note">先押方向，再决定要不要加码。</p>
+        </div>
+        <button type="button" class="ghost-btn duel-bet-toggle ${riskOn ? "active" : ""}" data-action="duel-toggle-risk" data-side="${side}">
+          ${riskOn ? "已加码" : "点此加码"}
+        </button>
+      </div>
+      <div class="filter-row">
+        ${bets
+          .map(
+            (bet) => `
+              <button
+                type="button"
+                class="filter-btn ${activeBet === bet.key ? "active" : ""}"
+                data-action="duel-set-bet"
+                data-side="${side}"
+                data-choice="${bet.key}"
+              >
+                ${bet.label}
+              </button>
+            `,
+          )
+          .join("")}
+      </div>
+    </article>
   `;
 }
 
@@ -4868,6 +5771,10 @@ function renderDuelMomentCard(moment) {
       <p class="footer-note">默认双方都点头才执行；如果其中一方不想做，直接改喝一口就好。</p>
     </div>
   `;
+}
+
+function formatCardNameList(cards) {
+  return (cards || []).map((card) => getCardDisplayName(card)).join(" / ");
 }
 
 function renderDuelHandCard(name, cards, options = {}) {
