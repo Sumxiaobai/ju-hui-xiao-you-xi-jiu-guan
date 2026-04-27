@@ -1010,6 +1010,65 @@ textarea {
   box-shadow: 0 10px 24px rgba(255, 143, 173, 0.08);
 }
 
+.memory-grid,
+.memory-options {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+}
+
+.memory-options {
+  margin-top: 16px;
+}
+
+.memory-option-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.memory-option-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(242, 179, 107, 0.26);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.memory-option-btn.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.memory-index-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.memory-index-badge {
+  position: absolute;
+  top: -8px;
+  left: 6px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(242, 179, 107, 0.95), rgba(255, 133, 95, 0.95));
+  color: #2a1709;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(242, 179, 107, 0.2);
+}
+
+.indexed-grid {
+  padding-top: 10px;
+}
+
 .duel-event-card {
   margin-top: 16px;
   border-color: rgba(242, 179, 107, 0.24);

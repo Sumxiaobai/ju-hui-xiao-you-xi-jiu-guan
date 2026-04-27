@@ -54,7 +54,7 @@ const HOME_MODULES = [
     route: "cards",
     badge: "牌",
     title: "纸牌小游戏",
-    description: "七种扑克牌玩法集中在一页，适合多人围着屏幕快速玩。",
+    description: "十种扑克牌玩法集中在一页，含 3 个考记忆力的新小游戏。",
     buttonText: "进入纸牌中心",
   },
   {
@@ -1294,6 +1294,9 @@ function createCardCenterState() {
       showRules: false,
       history: [],
     },
+    memoryFlip: createMemoryFlipGame(),
+    memoryOrder: createMemoryOrderGame(),
+    memoryChange: createMemoryChangeGame(),
     duel: createDuelGame(),
     holdem: createHoldemGame(),
     bigSister: createBigSisterGame(),
@@ -1312,6 +1315,50 @@ function createHighLowGame() {
     feedback: "先看当前这张牌，猜下一张会更大、更小还是相等。",
     tone: "neutral",
     lastGuess: "",
+  };
+}
+
+function createMemoryFlipGame(previous = {}) {
+  return {
+    round: Number.isFinite(previous.round) ? previous.round : 0,
+    score: Number.isFinite(previous.score) ? previous.score : 0,
+    streak: Number.isFinite(previous.streak) ? previous.streak : 0,
+    stage: ["idle", "preview", "guess", "resolved"].includes(previous.stage) ? previous.stage : "idle",
+    targetCard: previous.targetCard || null,
+    previewCards: Array.isArray(previous.previewCards) ? previous.previewCards.slice(0, 4) : [],
+    optionCards: Array.isArray(previous.optionCards) ? previous.optionCards.slice(0, 4) : [],
+    answerId: previous.answerId || "",
+    feedback: previous.feedback || "先展示 4 张牌，记住后再从选项里找出刚才出现过的那一张。",
+    tone: previous.tone || "neutral",
+  };
+}
+
+function createMemoryOrderGame(previous = {}) {
+  return {
+    round: Number.isFinite(previous.round) ? previous.round : 0,
+    score: Number.isFinite(previous.score) ? previous.score : 0,
+    streak: Number.isFinite(previous.streak) ? previous.streak : 0,
+    stage: ["idle", "preview", "input", "resolved"].includes(previous.stage) ? previous.stage : "idle",
+    sequence: Array.isArray(previous.sequence) ? previous.sequence.slice(0, 5) : [],
+    optionCards: Array.isArray(previous.optionCards) ? previous.optionCards.slice(0, 7) : [],
+    picks: Array.isArray(previous.picks) ? previous.picks.slice(0, 5) : [],
+    targetLength: Number.isFinite(previous.targetLength) ? previous.targetLength : 3,
+    feedback: previous.feedback || "先看顺序，再按同样顺序点牌。连对越多，下一轮会变长。",
+    tone: previous.tone || "neutral",
+  };
+}
+
+function createMemoryChangeGame(previous = {}) {
+  return {
+    round: Number.isFinite(previous.round) ? previous.round : 0,
+    score: Number.isFinite(previous.score) ? previous.score : 0,
+    streak: Number.isFinite(previous.streak) ? previous.streak : 0,
+    stage: ["idle", "preview", "guess", "resolved"].includes(previous.stage) ? previous.stage : "idle",
+    originalCards: Array.isArray(previous.originalCards) ? previous.originalCards.slice(0, 4) : [],
+    changedCards: Array.isArray(previous.changedCards) ? previous.changedCards.slice(0, 4) : [],
+    changedIndex: Number.isInteger(previous.changedIndex) ? previous.changedIndex : -1,
+    feedback: previous.feedback || "先记住 4 张牌，再看哪一个位置换了牌。",
+    tone: previous.tone || "neutral",
   };
 }
 
@@ -1712,6 +1759,15 @@ function shuffleArray(list) {
     [cloned[index], cloned[swapIndex]] = [cloned[swapIndex], cloned[index]];
   }
   return cloned;
+}
+
+function takeUniqueCards(count, excludeIds = []) {
+  const excludeSet = new Set(excludeIds);
+  return shuffleArray(createDeck()).filter((card) => !excludeSet.has(card.id)).slice(0, count);
+}
+
+function getCardShortLabel(card) {
+  return card ? `${card.suit}${card.rank}` : "待翻";
 }
 
 function pickRandom(list) {
@@ -2269,6 +2325,9 @@ function serializeCardsState(cards) {
     highLow: cards.highLow,
     roulette: cards.roulette,
     king: cards.king,
+    memoryFlip: cards.memoryFlip,
+    memoryOrder: cards.memoryOrder,
+    memoryChange: cards.memoryChange,
     duel: cards.duel,
     holdem: cards.holdem,
     bigSister: cards.bigSister,
@@ -2283,6 +2342,9 @@ function deserializeCardsState(raw) {
     highLow: raw?.highLow || defaults.highLow,
     roulette: raw?.roulette || defaults.roulette,
     king: deserializeKingState(raw?.king, defaults.king),
+    memoryFlip: raw?.memoryFlip || defaults.memoryFlip,
+    memoryOrder: raw?.memoryOrder || defaults.memoryOrder,
+    memoryChange: raw?.memoryChange || defaults.memoryChange,
     duel: deserializeDuelState(raw?.duel, defaults.duel),
     holdem: raw?.holdem || defaults.holdem,
     bigSister: raw?.bigSister || defaults.bigSister,
@@ -3274,6 +3336,186 @@ function resolveDuelIntimacyRound() {
 function resetDuelIntimacy() {
   state.cards.duel.intimacy = createDuelIntimacyState();
   playUiTone("soft");
+  renderApp();
+}
+
+function startMemoryFlipRound() {
+  const game = state.cards.memoryFlip;
+  const previewCards = takeUniqueCards(4);
+  const targetCard = pickRandom(previewCards);
+  const distractors = takeUniqueCards(3, previewCards.map((card) => card.id));
+  state.cards.memoryFlip = {
+    ...game,
+    round: game.round + 1,
+    stage: "preview",
+    targetCard,
+    previewCards,
+    optionCards: shuffleArray([targetCard, ...distractors]),
+    answerId: targetCard?.id || "",
+    feedback: "先记住这 4 张牌，准备好以后点“开始答题”。",
+    tone: "neutral",
+  };
+  renderApp();
+}
+
+function revealMemoryFlipQuestion() {
+  const game = state.cards.memoryFlip;
+  if (game.stage !== "preview") {
+    if (game.stage === "idle" || game.stage === "resolved") {
+      startMemoryFlipRound();
+    }
+    return;
+  }
+  game.stage = "guess";
+  game.feedback = `请找出刚才出现过的牌：${getCardShortLabel(game.targetCard)}。`;
+  renderApp();
+}
+
+function answerMemoryFlip(cardId) {
+  const game = state.cards.memoryFlip;
+  if (game.stage !== "guess") {
+    return;
+  }
+  const correct = cardId === game.answerId;
+  game.stage = "resolved";
+  game.score += correct ? 1 : 0;
+  game.streak = correct ? game.streak + 1 : 0;
+  game.tone = correct ? "win" : "danger";
+  game.feedback = correct
+    ? `答对了，就是 ${getCardShortLabel(game.targetCard)}。`
+    : `答错了，正确答案是 ${getCardShortLabel(game.targetCard)}。`;
+  playUiTone(correct ? "success" : "alert");
+  renderApp();
+}
+
+function resetMemoryFlipGame() {
+  state.cards.memoryFlip = createMemoryFlipGame();
+  renderApp();
+}
+
+function startMemoryOrderRound() {
+  const game = state.cards.memoryOrder;
+  const nextLength = Math.min(5, Math.max(3, game.streak >= 2 ? game.targetLength + 1 : game.targetLength));
+  const sequence = takeUniqueCards(nextLength);
+  const distractors = takeUniqueCards(Math.max(0, 7 - nextLength), sequence.map((card) => card.id));
+  state.cards.memoryOrder = {
+    ...game,
+    round: game.round + 1,
+    stage: "preview",
+    sequence,
+    optionCards: shuffleArray([...sequence, ...distractors]),
+    picks: [],
+    targetLength: nextLength,
+    feedback: `先记住这 ${nextLength} 张牌的顺序，准备好以后开始作答。`,
+    tone: "neutral",
+  };
+  renderApp();
+}
+
+function revealMemoryOrderQuestion() {
+  const game = state.cards.memoryOrder;
+  if (game.stage !== "preview") {
+    if (game.stage === "idle" || game.stage === "resolved") {
+      startMemoryOrderRound();
+    }
+    return;
+  }
+  game.stage = "input";
+  game.feedback = `请按刚才的顺序依次点击 ${game.targetLength} 张牌。`;
+  renderApp();
+}
+
+function pickMemoryOrderCard(cardId) {
+  const game = state.cards.memoryOrder;
+  if (game.stage !== "input") {
+    return;
+  }
+  if (game.picks.includes(cardId)) {
+    return;
+  }
+  game.picks = [...game.picks, cardId];
+  const currentIndex = game.picks.length - 1;
+  const expectedId = game.sequence[currentIndex]?.id;
+  if (cardId !== expectedId) {
+    game.stage = "resolved";
+    game.streak = 0;
+    game.tone = "danger";
+    game.feedback = `顺序错了，第 ${currentIndex + 1} 张应该是 ${getCardShortLabel(game.sequence[currentIndex])}。`;
+    playUiTone("alert");
+    renderApp();
+    return;
+  }
+  if (game.picks.length === game.targetLength) {
+    game.stage = "resolved";
+    game.score += 1;
+    game.streak += 1;
+    game.tone = "win";
+    game.feedback = `全对了，这轮顺序记得很稳。`;
+    playUiTone("success");
+    renderApp();
+    return;
+  }
+  game.feedback = `已点对 ${game.picks.length} 张，还差 ${game.targetLength - game.picks.length} 张。`;
+  renderApp();
+}
+
+function resetMemoryOrderGame() {
+  state.cards.memoryOrder = createMemoryOrderGame();
+  renderApp();
+}
+
+function startMemoryChangeRound() {
+  const game = state.cards.memoryChange;
+  const originalCards = takeUniqueCards(4);
+  const changedCards = originalCards.map((card) => ({ ...card }));
+  const changedIndex = Math.floor(Math.random() * changedCards.length);
+  const replacement = takeUniqueCards(1, originalCards.map((card) => card.id))[0];
+  changedCards[changedIndex] = replacement;
+  state.cards.memoryChange = {
+    ...game,
+    round: game.round + 1,
+    stage: "preview",
+    originalCards,
+    changedCards,
+    changedIndex,
+    feedback: "先记住这 4 张牌的位置，准备好后点“开始找不同”。",
+    tone: "neutral",
+  };
+  renderApp();
+}
+
+function revealMemoryChangeQuestion() {
+  const game = state.cards.memoryChange;
+  if (game.stage !== "preview") {
+    if (game.stage === "idle" || game.stage === "resolved") {
+      startMemoryChangeRound();
+    }
+    return;
+  }
+  game.stage = "guess";
+  game.feedback = "已经换掉了其中一个位置，请选出变化的那一格。";
+  renderApp();
+}
+
+function answerMemoryChange(index) {
+  const game = state.cards.memoryChange;
+  if (game.stage !== "guess") {
+    return;
+  }
+  const correct = Number(index) === game.changedIndex;
+  game.stage = "resolved";
+  game.score += correct ? 1 : 0;
+  game.streak = correct ? game.streak + 1 : 0;
+  game.tone = correct ? "win" : "danger";
+  game.feedback = correct
+    ? `答对了，第 ${game.changedIndex + 1} 个位置换了牌。`
+    : `答错了，变化的是第 ${game.changedIndex + 1} 个位置。`;
+  playUiTone(correct ? "success" : "alert");
+  renderApp();
+}
+
+function resetMemoryChangeGame() {
+  state.cards.memoryChange = createMemoryChangeGame();
   renderApp();
 }
 
@@ -4505,6 +4747,42 @@ function handleClick(event) {
     case "reset-king-deck":
       resetKingDeck();
       break;
+    case "memory-flip-start":
+      startMemoryFlipRound();
+      break;
+    case "memory-flip-reveal":
+      revealMemoryFlipQuestion();
+      break;
+    case "memory-flip-answer":
+      answerMemoryFlip(choice);
+      break;
+    case "memory-flip-reset":
+      resetMemoryFlipGame();
+      break;
+    case "memory-order-start":
+      startMemoryOrderRound();
+      break;
+    case "memory-order-reveal":
+      revealMemoryOrderQuestion();
+      break;
+    case "memory-order-pick":
+      pickMemoryOrderCard(choice);
+      break;
+    case "memory-order-reset":
+      resetMemoryOrderGame();
+      break;
+    case "memory-change-start":
+      startMemoryChangeRound();
+      break;
+    case "memory-change-reveal":
+      revealMemoryChangeQuestion();
+      break;
+    case "memory-change-answer":
+      answerMemoryChange(index);
+      break;
+    case "memory-change-reset":
+      resetMemoryChangeGame();
+      break;
     case "duel-set-mode":
       setDuelMode(choice);
       break;
@@ -4814,7 +5092,7 @@ function renderLobbyView() {
             <div class="hero-metrics">
               <span class="metric-pill"><strong>${TRUTH_BANK.length}</strong> 条真心话</span>
               <span class="metric-pill"><strong>${DARE_BANK.length}</strong> 条大冒险</span>
-              <span class="metric-pill"><strong>6</strong> 种纸牌玩法</span>
+              <span class="metric-pill"><strong>10</strong> 种纸牌玩法</span>
               <span class="metric-pill"><strong>${hasFirebaseConfig() ? "实时" : "本地"}</strong> 房间模式</span>
             </div>
           </div>
@@ -4896,13 +5174,13 @@ function renderHomeView() {
       <div class="hero-copy">
         <div>
           <h2>今晚想玩什么？首页直接开一局。</h2>
-          <p class="section-subtitle">真心话、大冒险、二选一和七种纸牌玩法都已经就位，适合聚会现场快速切换。</p>
+          <p class="section-subtitle">真心话、大冒险、二选一和十种纸牌玩法都已经就位，适合聚会现场快速切换。</p>
         </div>
         <div class="hero-metrics">
           <span class="metric-pill"><strong>${effectivePlayers.length}</strong> 位当前可参与玩家</span>
           <span class="metric-pill"><strong>${TRUTH_BANK.length}</strong> 条真心话</span>
           <span class="metric-pill"><strong>${DARE_BANK.length}</strong> 条大冒险</span>
-          <span class="metric-pill"><strong>7</strong> 种纸牌玩法</span>
+          <span class="metric-pill"><strong>10</strong> 种纸牌玩法</span>
         </div>
       </div>
     </section>
@@ -5348,7 +5626,7 @@ function renderCardsView() {
           <div class="panel-header">
             <div>
               <h2 class="section-title">纸牌小游戏中心</h2>
-              <p>一副虚拟扑克牌，七种现场可直接执行的聚会玩法。切换标签就能马上换游戏。</p>
+              <p>一副虚拟扑克牌，十种现场可直接执行的聚会玩法。切换标签就能马上换游戏。</p>
             </div>
           </div>
 
@@ -5502,6 +5780,9 @@ function renderCardTabs() {
     { key: "highlow", label: "高低牌猜猜" },
     { key: "roulette", label: "轮盘指令牌" },
     { key: "king", label: "国王酒吧局" },
+    { key: "memoryflip", label: "记牌翻翻乐" },
+    { key: "memoryorder", label: "顺序记忆局" },
+    { key: "memorychange", label: "谁变了" },
     { key: "duel", label: "双人酒牌局" },
     { key: "holdem", label: "聚会德州扑克" },
     { key: "bigsister", label: "大姐牌（聚会版）" },
@@ -5531,6 +5812,12 @@ function renderActiveCardGame() {
       return renderRouletteGame();
     case "king":
       return renderKingGame();
+    case "memoryflip":
+      return renderMemoryFlipGame();
+    case "memoryorder":
+      return renderMemoryOrderGame();
+    case "memorychange":
+      return renderMemoryChangeGame();
     case "duel":
       return renderDuelGame();
     case "holdem":
@@ -5756,6 +6043,188 @@ function renderKingGame() {
             `
             : ""
         }
+      </div>
+    </div>
+  `;
+}
+
+function renderMemoryFlipGame() {
+  const game = state.cards.memoryFlip;
+  return `
+    <div class="main-stack">
+      <div class="score-panel">
+        <div class="score-box">
+          <span>当前得分</span>
+          <strong>${game.score}</strong>
+        </div>
+        <div class="score-box">
+          <span>连续答对</span>
+          <strong>${game.streak}</strong>
+        </div>
+      </div>
+
+      <div class="memory-grid">
+        ${
+          game.stage === "preview"
+            ? game.previewCards.map((card) => renderMiniCard(card)).join("")
+            : game.stage === "resolved"
+              ? game.optionCards.map((card) => renderMiniCard(card)).join("")
+              : Array.from({ length: 4 }, () => '<div class="mini-card mini-card-back"><span>?</span><span>★</span></div>').join("")
+        }
+      </div>
+
+      <div class="button-row">
+        <button type="button" class="primary-btn" data-action="memory-flip-start">${game.stage === "preview" ? "重新发题" : "开始新一轮"}</button>
+        <button type="button" class="secondary-btn" data-action="memory-flip-reveal">${game.stage === "preview" ? "开始答题" : "继续"}</button>
+        <button type="button" class="ghost-btn" data-action="memory-flip-reset">重置得分</button>
+      </div>
+
+      ${
+        game.stage === "guess" || game.stage === "resolved"
+          ? `
+            <div class="memory-options">
+              ${game.optionCards
+                .map(
+                  (card) => `
+                    <button type="button" class="memory-option-btn" data-action="memory-flip-answer" data-choice="${card.id}">
+                      ${renderMiniCard(card)}
+                    </button>
+                  `,
+                )
+                .join("")}
+            </div>
+          `
+          : ""
+      }
+
+      <div class="result-card" data-tone="${game.tone}">
+        <small>玩法提示</small>
+        <h3>${escapeHtml(game.feedback)}</h3>
+        <p>先看牌，再找牌。适合 1 个人答题，其余人围观起哄。</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderMemoryOrderGame() {
+  const game = state.cards.memoryOrder;
+  return `
+    <div class="main-stack">
+      <div class="score-panel">
+        <div class="score-box">
+          <span>当前得分</span>
+          <strong>${game.score}</strong>
+        </div>
+        <div class="score-box">
+          <span>本轮长度</span>
+          <strong>${game.targetLength}</strong>
+        </div>
+      </div>
+
+      <div class="rules-card">
+        <h4>记忆顺序</h4>
+        <div class="memory-grid">
+          ${
+            game.stage === "preview" || game.stage === "resolved"
+              ? game.sequence.map((card) => renderMiniCard(card)).join("")
+              : Array.from({ length: game.targetLength }, () => '<div class="mini-card mini-card-back"><span>?</span><span>☆</span></div>').join("")
+          }
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button type="button" class="primary-btn" data-action="memory-order-start">${game.stage === "preview" ? "重新出题" : "开始新一轮"}</button>
+        <button type="button" class="secondary-btn" data-action="memory-order-reveal">${game.stage === "preview" ? "开始作答" : "继续"}</button>
+        <button type="button" class="ghost-btn" data-action="memory-order-reset">重置得分</button>
+      </div>
+
+      ${
+        game.stage === "input" || game.stage === "resolved"
+          ? `
+            <div class="memory-options">
+              ${game.optionCards
+                .map(
+                  (card) => `
+                    <button
+                      type="button"
+                      class="memory-option-btn ${game.picks.includes(card.id) ? "disabled" : ""}"
+                      data-action="memory-order-pick"
+                      data-choice="${card.id}"
+                    >
+                      ${renderMiniCard(card)}
+                    </button>
+                  `,
+                )
+                .join("")}
+            </div>
+          `
+          : ""
+      }
+
+      <div class="result-card" data-tone="${game.tone}">
+        <small>玩法提示</small>
+        <h3>${escapeHtml(game.feedback)}</h3>
+        <p>连续答对后，下一轮会自动从 3 张加到 4 张、5 张。</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderMemoryChangeGame() {
+  const game = state.cards.memoryChange;
+  const cardsToShow = game.stage === "guess" || game.stage === "resolved" ? game.changedCards : game.originalCards;
+  return `
+    <div class="main-stack">
+      <div class="score-panel">
+        <div class="score-box">
+          <span>当前得分</span>
+          <strong>${game.score}</strong>
+        </div>
+        <div class="score-box">
+          <span>连续命中</span>
+          <strong>${game.streak}</strong>
+        </div>
+      </div>
+
+      <div class="memory-grid indexed-grid">
+        ${cardsToShow.length
+          ? cardsToShow
+              .map(
+                (card, index) => `
+                  <div class="memory-index-card">
+                    <span class="memory-index-badge">${index + 1}</span>
+                    ${renderMiniCard(card)}
+                  </div>
+                `,
+              )
+              .join("")
+          : Array.from({ length: 4 }, (_, index) => `<div class="placeholder-card">位置 ${index + 1}</div>`).join("")}
+      </div>
+
+      <div class="button-row">
+        <button type="button" class="primary-btn" data-action="memory-change-start">${game.stage === "preview" ? "重新摆牌" : "开始新一轮"}</button>
+        <button type="button" class="secondary-btn" data-action="memory-change-reveal">${game.stage === "preview" ? "开始找不同" : "继续"}</button>
+        <button type="button" class="ghost-btn" data-action="memory-change-reset">重置得分</button>
+      </div>
+
+      ${
+        game.stage === "guess" || game.stage === "resolved"
+          ? `
+            <div class="filter-row">
+              ${Array.from({ length: 4 }, (_, index) => `
+                <button type="button" class="filter-btn" data-action="memory-change-answer" data-index="${index}">
+                  第 ${index + 1} 格
+                </button>
+              `).join("")}
+            </div>
+          `
+          : ""
+      }
+
+      <div class="result-card" data-tone="${game.tone}">
+        <small>玩法提示</small>
+        <h3>${escapeHtml(game.feedback)}</h3>
+        <p>这个玩法更适合多人一起喊答案，看看谁先发现换掉的是哪一格。</p>
       </div>
     </div>
   `;
